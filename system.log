@@ -105,3 +105,209 @@
 [2025-09-09 21:21:44] WARN: Drive 0 is already inactive/failed.
 [2025-09-09 21:22:03] INFO: Initiating clear of RAID configuration raid_10.
 [2025-09-09 21:22:10] INFO: RAID Teaching Tool shutting down
+[2025-09-09 21:31:41] INFO: RAIDVIZ application started.
+[2025-09-09 21:31:54] INFO: Initializing RAID-5 (Striping with Parity) structure (clear_existing=True)
+[2025-09-09 21:31:54] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:31:54] INFO: Added drive 0 to RAID-5
+[2025-09-09 21:31:54] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:31:54] INFO: Added drive 1 to RAID-5
+[2025-09-09 21:31:54] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:31:54] INFO: Added drive 2 to RAID-5
+[2025-09-09 21:31:54] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:31:54] INFO: RAID-5 initialized fresh with 3 drives
+[2025-09-09 21:32:15] INFO: Writing data: 'Hello World' to RAID-5
+[2025-09-09 21:32:15] INFO: Drive 1: Written 'H' to physical sector 0 (LBA: 0) as DATA
+[2025-09-09 21:32:15] INFO: Drive 2: Written 'e' to physical sector 0 (LBA: 0) as DATA
+[2025-09-09 21:32:16] INFO: Drive 0: Written 'P045' to physical sector 0 (LBA: 0) as PARITY
+[2025-09-09 21:32:16] INFO: Parity 'P045' calculated and stored on drive 0
+[2025-09-09 21:32:16] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:32:16] INFO: RAID-5 write operation completed for logical block 0
+[2025-09-09 21:32:46] INFO: Writing data: 'Hello mom' to RAID-5
+[2025-09-09 21:32:46] INFO: Drive 0: Written 'H' to physical sector 1 (LBA: 1) as DATA
+[2025-09-09 21:32:46] INFO: Drive 2: Written 'e' to physical sector 1 (LBA: 1) as DATA
+[2025-09-09 21:32:47] INFO: Drive 1: Written 'P045' to physical sector 1 (LBA: 1) as PARITY
+[2025-09-09 21:32:47] INFO: Parity 'P045' calculated and stored on drive 1
+[2025-09-09 21:32:47] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:32:47] INFO: RAID-5 write operation completed for logical block 1
+[2025-09-09 21:34:39] INFO: RAIDVIZ application shutting down.
+[2025-09-09 21:34:45] INFO: RAIDVIZ application started.
+[2025-09-09 21:34:48] INFO: Initializing RAID-6 (Striping with Dual Parity) structure (clear_existing=True)
+[2025-09-09 21:34:48] INFO: RAID configuration saved to raid_6/raid_config.json
+[2025-09-09 21:34:48] INFO: Added drive 0 to RAID-6
+[2025-09-09 21:34:48] INFO: RAID configuration saved to raid_6/raid_config.json
+[2025-09-09 21:34:48] INFO: Added drive 1 to RAID-6
+[2025-09-09 21:34:48] INFO: RAID configuration saved to raid_6/raid_config.json
+[2025-09-09 21:34:48] INFO: Added drive 2 to RAID-6
+[2025-09-09 21:34:48] INFO: RAID configuration saved to raid_6/raid_config.json
+[2025-09-09 21:34:48] INFO: Added drive 3 to RAID-6
+[2025-09-09 21:34:48] INFO: RAID configuration saved to raid_6/raid_config.json
+[2025-09-09 21:34:48] INFO: RAID-6 initialized fresh with 4 drives
+[2025-09-09 21:34:57] INFO: Writing data: 'Hello World' to RAID-6
+[2025-09-09 21:34:57] INFO: Drive 2: Written 'H' to physical sector 0 (LBA: 0) as DATA
+[2025-09-09 21:34:57] INFO: Drive 3: Written 'e' to physical sector 0 (LBA: 0) as DATA
+[2025-09-09 21:34:58] INFO: Drive 0: Written 'P045' to physical sector 0 (LBA: 0) as PARITY-P
+[2025-09-09 21:34:58] INFO: P-Parity 'P045' stored on drive 0
+[2025-09-09 21:34:58] INFO: Drive 1: Written 'Q130' to physical sector 0 (LBA: 0) as PARITY-Q
+[2025-09-09 21:34:58] INFO: Q-Parity 'Q130' stored on drive 1
+[2025-09-09 21:34:58] INFO: RAID configuration saved to raid_6/raid_config.json
+[2025-09-09 21:34:58] INFO: RAID-6 write operation completed for logical block 0
+[2025-09-09 21:35:11] INFO: Initiating clear of RAID configuration raid_6.
+[2025-09-09 21:35:14] INFO: Initializing RAID-5 (Striping with Parity) structure (clear_existing=True)
+[2025-09-09 21:35:14] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:35:14] INFO: Added drive 0 to RAID-5
+[2025-09-09 21:35:14] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:35:14] INFO: Added drive 1 to RAID-5
+[2025-09-09 21:35:14] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:35:14] INFO: Added drive 2 to RAID-5
+[2025-09-09 21:35:14] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:35:14] INFO: RAID-5 initialized fresh with 3 drives
+[2025-09-09 21:35:18] INFO: Writing data: 'Hello World' to RAID-5
+[2025-09-09 21:35:18] INFO: Drive 1: Written 'H' to physical sector 0 (LBA: 0) as DATA
+[2025-09-09 21:35:18] INFO: Drive 2: Written 'e' to physical sector 0 (LBA: 0) as DATA
+[2025-09-09 21:35:18] INFO: Drive 0: Written 'P045' to physical sector 0 (LBA: 0) as PARITY
+[2025-09-09 21:35:18] INFO: Parity 'P045' calculated and stored on drive 0
+[2025-09-09 21:35:18] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:35:18] INFO: RAID-5 write operation completed for logical block 0
+[2025-09-09 21:39:00] INFO: RAIDVIZ application shutting down.
+[2025-09-09 21:39:04] INFO: RAIDVIZ application started.
+[2025-09-09 21:39:06] INFO: Initializing RAID-5 (Striping with Parity) structure (clear_existing=True)
+[2025-09-09 21:39:06] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:39:06] INFO: Added drive 0 to RAID-5
+[2025-09-09 21:39:06] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:39:06] INFO: Added drive 1 to RAID-5
+[2025-09-09 21:39:06] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:39:06] INFO: Added drive 2 to RAID-5
+[2025-09-09 21:39:06] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:39:06] INFO: RAID-5 initialized fresh with 3 drives
+[2025-09-09 21:39:17] INFO: Writing data: 'Hello World' to RAID-5
+[2025-09-09 21:39:17] INFO: Drive 1: Written 'H' to physical sector 0 (LBA: 0) as DATA
+[2025-09-09 21:39:17] INFO: Drive 0: Written 'P072' to physical sector 0 (LBA: 0) as PARITY
+[2025-09-09 21:39:17] INFO: Parity 'P072' calculated and stored on drive 0
+[2025-09-09 21:39:18] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:39:18] INFO: RAID-5 write operation completed for logical block 0 (data: 'H')
+[2025-09-09 21:39:18] INFO: Drive 2: Written 'e' to physical sector 0 (LBA: 1) as DATA
+[2025-09-09 21:39:18] INFO: Drive 1: Written 'P101' to physical sector 1 (LBA: 1) as PARITY
+[2025-09-09 21:39:18] INFO: Parity 'P101' calculated and stored on drive 1
+[2025-09-09 21:39:18] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:39:18] INFO: RAID-5 write operation completed for logical block 1 (data: 'e')
+[2025-09-09 21:39:18] INFO: Drive 0: Written 'l' to physical sector 1 (LBA: 2) as DATA
+[2025-09-09 21:39:18] INFO: Drive 2: Written 'P108' to physical sector 1 (LBA: 2) as PARITY
+[2025-09-09 21:39:18] INFO: Parity 'P108' calculated and stored on drive 2
+[2025-09-09 21:39:18] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:39:18] INFO: RAID-5 write operation completed for logical block 2 (data: 'l')
+[2025-09-09 21:39:18] INFO: Drive 2: Written 'l' to physical sector 2 (LBA: 3) as DATA
+[2025-09-09 21:39:18] INFO: Drive 0: Written 'P108' to physical sector 2 (LBA: 3) as PARITY
+[2025-09-09 21:39:18] INFO: Parity 'P108' calculated and stored on drive 0
+[2025-09-09 21:39:18] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:39:18] INFO: RAID-5 write operation completed for logical block 3 (data: 'l')
+[2025-09-09 21:39:18] INFO: Drive 0: Written 'o' to physical sector 3 (LBA: 4) as DATA
+[2025-09-09 21:39:18] INFO: Drive 1: Written 'P111' to physical sector 2 (LBA: 4) as PARITY
+[2025-09-09 21:39:18] INFO: Parity 'P111' calculated and stored on drive 1
+[2025-09-09 21:39:18] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:39:18] INFO: RAID-5 write operation completed for logical block 4 (data: 'o')
+[2025-09-09 21:39:18] INFO: Drive 1: Written ' ' to physical sector 3 (LBA: 5) as DATA
+[2025-09-09 21:39:18] INFO: Drive 2: Written 'P032' to physical sector 3 (LBA: 5) as PARITY
+[2025-09-09 21:39:18] INFO: Parity 'P032' calculated and stored on drive 2
+[2025-09-09 21:39:18] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:39:18] INFO: RAID-5 write operation completed for logical block 5 (data: ' ')
+[2025-09-09 21:39:18] INFO: Drive 1: Written 'W' to physical sector 4 (LBA: 6) as DATA
+[2025-09-09 21:39:18] INFO: Drive 0: Written 'P087' to physical sector 4 (LBA: 6) as PARITY
+[2025-09-09 21:39:18] INFO: Parity 'P087' calculated and stored on drive 0
+[2025-09-09 21:39:18] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:39:18] INFO: RAID-5 write operation completed for logical block 6 (data: 'W')
+[2025-09-09 21:39:18] INFO: Drive 2: Written 'o' to physical sector 4 (LBA: 7) as DATA
+[2025-09-09 21:39:18] INFO: Drive 1: Written 'P111' to physical sector 5 (LBA: 7) as PARITY
+[2025-09-09 21:39:18] INFO: Parity 'P111' calculated and stored on drive 1
+[2025-09-09 21:39:18] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:39:18] INFO: RAID-5 write operation completed for logical block 7 (data: 'o')
+[2025-09-09 21:39:18] INFO: Drive 0: Written 'r' to physical sector 5 (LBA: 8) as DATA
+[2025-09-09 21:39:18] INFO: Drive 2: Written 'P114' to physical sector 5 (LBA: 8) as PARITY
+[2025-09-09 21:39:18] INFO: Parity 'P114' calculated and stored on drive 2
+[2025-09-09 21:39:19] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:39:19] INFO: RAID-5 write operation completed for logical block 8 (data: 'r')
+[2025-09-09 21:39:19] INFO: Drive 2: Written 'l' to physical sector 6 (LBA: 9) as DATA
+[2025-09-09 21:39:19] INFO: Drive 0: Written 'P108' to physical sector 6 (LBA: 9) as PARITY
+[2025-09-09 21:39:19] INFO: Parity 'P108' calculated and stored on drive 0
+[2025-09-09 21:39:19] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:39:19] INFO: RAID-5 write operation completed for logical block 9 (data: 'l')
+[2025-09-09 21:39:19] INFO: Drive 0: Written 'd' to physical sector 7 (LBA: 10) as DATA
+[2025-09-09 21:39:19] INFO: Drive 1: Written 'P100' to physical sector 6 (LBA: 10) as PARITY
+[2025-09-09 21:39:19] INFO: Parity 'P100' calculated and stored on drive 1
+[2025-09-09 21:39:19] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:39:19] INFO: RAID-5 write operation completed for logical block 10 (data: 'd')
+[2025-09-09 21:39:19] INFO: Finished processing input string 'Hello World'. Next LBA will be 11
+[2025-09-09 21:41:13] INFO: Initiating clear of RAID configuration raid_5.
+[2025-09-09 21:41:19] INFO: User chose to clear: Removed raid_5
+[2025-09-09 21:41:19] INFO: Initializing RAID-5 (Striping with Parity) structure (clear_existing=True)
+[2025-09-09 21:41:19] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:41:19] INFO: Added drive 0 to RAID-5
+[2025-09-09 21:41:20] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:41:20] INFO: Added drive 1 to RAID-5
+[2025-09-09 21:41:20] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:41:20] INFO: Added drive 2 to RAID-5
+[2025-09-09 21:41:20] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:41:20] INFO: RAID-5 initialized fresh with 3 drives
+[2025-09-09 21:41:27] INFO: Writing data: 'Hello World!' to RAID-5
+[2025-09-09 21:41:27] INFO: Drive 1: Written 'H' to physical sector 0 (LBA: 0) as DATA
+[2025-09-09 21:41:27] INFO: Drive 0: Written 'P072' to physical sector 0 (LBA: 0) as PARITY
+[2025-09-09 21:41:27] INFO: Parity 'P072' calculated and stored on drive 0
+[2025-09-09 21:41:27] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:41:27] INFO: RAID-5 write operation completed for logical block 0 (data: 'H')
+[2025-09-09 21:41:27] INFO: Drive 2: Written 'e' to physical sector 0 (LBA: 1) as DATA
+[2025-09-09 21:41:27] INFO: Drive 1: Written 'P101' to physical sector 1 (LBA: 1) as PARITY
+[2025-09-09 21:41:27] INFO: Parity 'P101' calculated and stored on drive 1
+[2025-09-09 21:41:27] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:41:27] INFO: RAID-5 write operation completed for logical block 1 (data: 'e')
+[2025-09-09 21:41:27] INFO: Drive 0: Written 'l' to physical sector 1 (LBA: 2) as DATA
+[2025-09-09 21:41:28] INFO: Drive 2: Written 'P108' to physical sector 1 (LBA: 2) as PARITY
+[2025-09-09 21:41:28] INFO: Parity 'P108' calculated and stored on drive 2
+[2025-09-09 21:41:28] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:41:28] INFO: RAID-5 write operation completed for logical block 2 (data: 'l')
+[2025-09-09 21:41:28] INFO: Drive 2: Written 'l' to physical sector 2 (LBA: 3) as DATA
+[2025-09-09 21:41:28] INFO: Drive 0: Written 'P108' to physical sector 2 (LBA: 3) as PARITY
+[2025-09-09 21:41:28] INFO: Parity 'P108' calculated and stored on drive 0
+[2025-09-09 21:41:28] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:41:28] INFO: RAID-5 write operation completed for logical block 3 (data: 'l')
+[2025-09-09 21:41:28] INFO: Drive 0: Written 'o' to physical sector 3 (LBA: 4) as DATA
+[2025-09-09 21:41:28] INFO: Drive 1: Written 'P111' to physical sector 2 (LBA: 4) as PARITY
+[2025-09-09 21:41:28] INFO: Parity 'P111' calculated and stored on drive 1
+[2025-09-09 21:41:28] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:41:28] INFO: RAID-5 write operation completed for logical block 4 (data: 'o')
+[2025-09-09 21:41:28] INFO: Drive 1: Written ' ' to physical sector 3 (LBA: 5) as DATA
+[2025-09-09 21:41:28] INFO: Drive 2: Written 'P032' to physical sector 3 (LBA: 5) as PARITY
+[2025-09-09 21:41:28] INFO: Parity 'P032' calculated and stored on drive 2
+[2025-09-09 21:41:28] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:41:28] INFO: RAID-5 write operation completed for logical block 5 (data: ' ')
+[2025-09-09 21:41:28] INFO: Drive 1: Written 'W' to physical sector 4 (LBA: 6) as DATA
+[2025-09-09 21:41:28] INFO: Drive 0: Written 'P087' to physical sector 4 (LBA: 6) as PARITY
+[2025-09-09 21:41:28] INFO: Parity 'P087' calculated and stored on drive 0
+[2025-09-09 21:41:28] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:41:28] INFO: RAID-5 write operation completed for logical block 6 (data: 'W')
+[2025-09-09 21:41:28] INFO: Drive 2: Written 'o' to physical sector 4 (LBA: 7) as DATA
+[2025-09-09 21:41:28] INFO: Drive 1: Written 'P111' to physical sector 5 (LBA: 7) as PARITY
+[2025-09-09 21:41:28] INFO: Parity 'P111' calculated and stored on drive 1
+[2025-09-09 21:41:28] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:41:28] INFO: RAID-5 write operation completed for logical block 7 (data: 'o')
+[2025-09-09 21:41:28] INFO: Drive 0: Written 'r' to physical sector 5 (LBA: 8) as DATA
+[2025-09-09 21:41:28] INFO: Drive 2: Written 'P114' to physical sector 5 (LBA: 8) as PARITY
+[2025-09-09 21:41:28] INFO: Parity 'P114' calculated and stored on drive 2
+[2025-09-09 21:41:28] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:41:28] INFO: RAID-5 write operation completed for logical block 8 (data: 'r')
+[2025-09-09 21:41:28] INFO: Drive 2: Written 'l' to physical sector 6 (LBA: 9) as DATA
+[2025-09-09 21:41:28] INFO: Drive 0: Written 'P108' to physical sector 6 (LBA: 9) as PARITY
+[2025-09-09 21:41:28] INFO: Parity 'P108' calculated and stored on drive 0
+[2025-09-09 21:41:28] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:41:28] INFO: RAID-5 write operation completed for logical block 9 (data: 'l')
+[2025-09-09 21:41:29] INFO: Drive 0: Written 'd' to physical sector 7 (LBA: 10) as DATA
+[2025-09-09 21:41:29] INFO: Drive 1: Written 'P100' to physical sector 6 (LBA: 10) as PARITY
+[2025-09-09 21:41:29] INFO: Parity 'P100' calculated and stored on drive 1
+[2025-09-09 21:41:29] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:41:29] INFO: RAID-5 write operation completed for logical block 10 (data: 'd')
+[2025-09-09 21:41:29] INFO: Drive 1: Written '!' to physical sector 7 (LBA: 11) as DATA
+[2025-09-09 21:41:29] INFO: Drive 2: Written 'P033' to physical sector 7 (LBA: 11) as PARITY
+[2025-09-09 21:41:29] INFO: Parity 'P033' calculated and stored on drive 2
+[2025-09-09 21:41:29] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:41:29] INFO: RAID-5 write operation completed for logical block 11 (data: '!')
+[2025-09-09 21:41:29] INFO: Finished processing input string 'Hello World!'. Next LBA will be 12
+[2025-09-09 21:41:59] INFO: RAID configuration saved to raid_5/raid_config.json
+[2025-09-09 21:41:59] INFO: Added drive 3 to RAID-5
