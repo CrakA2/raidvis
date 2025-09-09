@@ -166,7 +166,7 @@ class Drive:
             self.next_physical_sector = sector_num + 1
         self._update_file()
         logger.log(
-            f"Drive {self.drive_id}: (Rebuild) Written '{data}' to physical sector {sector_num} (LBA: {lba if lba is not None else 'N/A'}) as {block_type}"
+            f"Drive {self.drive_id}: (WriteSpecific) '{data}' to physical sector {sector_num} (LBA: {lba if lba is not None else 'N/A'}) as {block_type}"
         )
 
     def read_sector(self, sector: int) -> Optional[str]:
@@ -265,6 +265,8 @@ class RAIDArray:
         self.folder_path = f"raid_{raid_level}"
         self.rebuild_active = False
         self.rebuild_thread = None
+        self.rebalance_active = False # New flag for rebalance operations
+        self.rebalance_thread = None
         self.current_logical_block_index = 0
         # Maps LBA to a dictionary of {drive_id: physical_sector_number}
         self.logical_to_physical_map: Dict[int, Dict[int, int]] = {}
@@ -504,19 +506,16 @@ class RAIDArray:
 
         if not initial_setup and self.raid_level in [0, 5, 6]:
             print(
-                "\n\033[93mNOTICE: For RAID-0, RAID-5, and RAID-6, adding a drive typically requires "
-                "rebalancing/rebuilding the entire array to incorporate the new drive "
-                "into the striping pattern. This will essentially rebuild the entire index "
-                "and redistribute blocks. This demo simulates adding an empty drive, "
-                "and future writes will use it. For full rebalancing, a complete rebuild "
-                "operation would be needed.\033[0m"
+                f"\n\033[93mNOTICE: New drive {new_drive_id} added. For RAID-{self.raid_level}, this typically requires "
+                "rebalancing existing data to utilize the new drive. "
+                "Initiating a rebalance process to redistribute logical blocks across all active drives, including the new one. "
+                "This will update the stripe patterns for all existing data.\033[0m"
             )
+            self.start_rebalance(new_drive_id=new_drive_id)
         elif not initial_setup and self.raid_level == 1:
             print(
-                "\n\033[93mNOTICE: For RAID-1, adding a drive creates a new mirror. "
-                "A rebuild/synchronization process would typically copy all data "
-                "from an existing mirror to the new drive to make it a full copy. "
-                "This will be automatically initiated for the newly added drive.\033[0m"
+                f"\n\033[93mNOTICE: New drive {new_drive_id} added. For RAID-1, this creates a new mirror copy. "
+                "Initiating a synchronization process to copy all existing data to this new drive.\033[0m"
             )
             # For RAID-1, trigger a "rebuild" (clone) for the new drive
             self.start_rebuild(
@@ -548,6 +547,7 @@ class RAIDArray:
             logger.log(
                 f"Drive {drive_id_to_fail} is already inactive/failed.", "WARN"
             )
+            print(f"\033[93mWARNING: Drive {drive_id_to_fail} is already inactive/failed. No further action needed.\033[0m")
             return  # Don't prompt for rebuild if already failed
 
         failed_drive_obj.mark_failed()  # Mark the drive as failed
@@ -589,11 +589,7 @@ class RAIDArray:
             if choice == "1":
                 # Option to re-add the *same* physical drive if it was just disconnected
                 # This assumes the drive's content wasn't corrupted or wiped.
-                if not failed_drive_obj.is_active and os.path.exists(
-                    failed_drive_obj.file_path
-                ):
-                    # For RAID-0, re-adding a failed drive doesn't magically recover data.
-                    # The user needs to understand that.
+                if failed_drive_obj.metadata.get("status") == "failed": # Must be actually failed to try re-adding
                     if self.raid_level == 0:
                         logger.log(
                             f"Cannot effectively 're-add' a failed drive {drive_id_to_fail} for RAID-0 "
@@ -605,19 +601,16 @@ class RAIDArray:
                         failed_drive_obj._update_file()
                         return
 
-                    # For redundant RAIDs, if signature matches, we can "re-integrate"
-                    # In a real system, this would trigger a resync. Here, we simply
-                    # reactivate and then suggest a rebuild (which `start_rebuild` would do).
                     if failed_drive_obj.metadata.get("signature") == failed_drive_obj.signature:
                         failed_drive_obj.is_active = True
-                        failed_drive_obj.metadata["status"] = "re_adding" # Temporarily re-adding
+                        failed_drive_obj.metadata["status"] = "re_adding" # Temporary status
                         failed_drive_obj._update_file()
                         logger.log(
                             f"Drive {drive_id_to_fail} being re-added. Signature match: {failed_drive_obj.signature}",
                             "INFO",
                         )
                         self._save_config()
-                        # Immediately start a rebuild to resync the data
+                        # Immediately start a rebuild to resync the data to this same drive_id
                         self.start_rebuild(failed_logical_drive_position=drive_id_to_fail, replacement_drive_id=drive_id_to_fail)
                     else:
                         logger.log(
@@ -626,7 +619,7 @@ class RAIDArray:
                         )
                 else:
                     logger.log(
-                        f"Cannot re-add drive {drive_id_to_fail}. Drive file missing or already active.",
+                        f"Cannot re-add drive {drive_id_to_fail}. It's not in a 'failed' state that can be re-added.",
                         "ERROR",
                     )
 
@@ -803,14 +796,10 @@ class RAIDArray:
         # Simple approach: use a round-robin for data drives (within the current stripe).
         data_drive_for_this_lba = data_drives_for_stripe[lba % len(data_drives_for_stripe)]
 
-        parity_data_chars = data # For a single character block, parity is just that character if XORing with nothing, then XOR with other data later.
-                                 # This `_calculate_parity` assumes multiple chars, so here it will treat single char.
-                                 # Simplified: Parity is calculated over the actual data written.
-
+        # Write data block
         try:
             physical_sector = data_drive_for_this_lba.write_sector(data, "DATA", lba)
             self.logical_to_physical_map[lba][data_drive_for_this_lba.drive_id] = physical_sector
-            # parity_data_chars remains just 'data' for now, if only one data block per LBA
         except Exception as e:
             logger.log(f"\033[91mError writing data to Drive {data_drive_for_this_lba.drive_id}: {e}\033[0m", "ERROR")
             data_drive_for_this_lba.mark_failed()
@@ -1187,6 +1176,10 @@ class RAIDArray:
             logger.log("REBUILD: Another rebuild is already active.", "WARN")
             print("\033[93mWARNING: Another rebuild is already active. Please wait.\033[0m")
             return
+        if self.rebalance_active:
+            logger.log("REBUILD: A rebalance is currently active, cannot start rebuild.", "WARN")
+            print("\033[93mWARNING: A rebalance is currently active. Please wait for it to complete.\033[0m")
+            return
 
         # Validate drive IDs
         if not (0 <= replacement_drive_id < len(self.drives)):
@@ -1210,14 +1203,14 @@ class RAIDArray:
 
             if failed_logical_drive_position == replacement_drive_id:
                 # This case implies re-adding the same physical drive after failure
-                if failed_drive_obj.is_active:
-                    logger.log(
-                        f"Drive {failed_logical_drive_position} is active and not marked failed. Cannot rebuild.",
-                        "WARN",
+                if failed_drive_obj.is_active: # This check is now redundant if previous validation passed
+                    logger.log( # This message implies an issue in logic flow, as it should be failed
+                        f"Drive {failed_logical_drive_position} is active. This shouldn't happen during a rebuild trigger.",
+                        "ERROR",
                     )
-                    print(f"\033[93mWARNING: Drive {failed_logical_drive_position} is active. No rebuild needed.\033[0m")
+                    print(f"\033[91mERROR: Drive {failed_logical_drive_position} is unexpectedly active. Cannot proceed with rebuild.\033[0m")
                     return
-                # If it's the same drive, but marked failed, we proceed to rebuild it
+                # If it's the same drive, and genuinely failed, proceed
             elif replacement_drive_obj.is_active:
                 logger.log(
                     f"Replacement drive {replacement_drive_id} is already active.",
@@ -1301,35 +1294,19 @@ class RAIDArray:
 
                 physical_sector_map_for_lba = self.logical_to_physical_map.get(lba, {})
 
-                # Determine the physical sector on the *target* drive (the one being rebuilt/synced)
-                # If a drive failed, we look up its old physical sector for this LBA.
-                # If a new drive is added, we determine a sector for it based on the LBA.
-                # For this demo, we can just use the next available physical sector on the replacement drive for this LBA.
-                # Or for simplicity, assume target_physical_sector_on_replacement should exist from original map.
-                
-                # We need the physical sector that *should have been* or *will be* occupied by this LBA on the target drive
+                # Determine the physical sector on the *target* drive (the one being rebuilt/synced).
+                target_physical_sector_on_replacement = None
                 if not is_new_drive_add:
+                    # For a failed drive, the replacement drive effectively takes over the old slot.
+                    # It should use the same physical sector mapping that the failed drive had for this LBA.
                     target_physical_sector_on_replacement = physical_sector_map_for_lba.get(failed_logical_drive_position)
-                    if target_physical_sector_on_replacement is None: # This LBA wasn't mapped to the failed drive
-                        # Assign a new logical physical sector to the replacement drive
-                        target_physical_sector_on_replacement = replacement_drive.next_physical_sector
-                        replacement_drive.next_physical_sector += 1 # Manually increment since write_to_specific won't for this case
-                else: # New drive add
-                    target_physical_sector_on_replacement = replacement_drive.next_physical_sector
-                    replacement_drive.next_physical_sector += 1
-
-
-                if target_physical_sector_on_replacement is None:
-                    # If this LBA wasn't originally mapped to the failed/new drive's position, it's fine.
-                    # Or if it was marked -1 (permanently lost for RAID-0).
-                    if (not is_new_drive_add and self.raid_level == 0 and failed_logical_drive_position in physical_sector_map_for_lba and physical_sector_map_for_lba[failed_logical_drive_position] == -1):
-                        logger.log(f"REBUILD: LBA {lba} already marked permanently lost for RAID-0 on drive {failed_logical_drive_position}. Skipping.", "INFO")
-                    else:
-                        logger.log(
-                            f"REBUILD WARN: Logical block {lba} did not have a corresponding physical sector on the target logical position, skipping.",
-                            "INFO",
-                        )
-                    continue
+                    if target_physical_sector_on_replacement is None or target_physical_sector_on_replacement == -1:
+                        logger.log(f"REBUILD WARN: LBA {lba} was not mapped to failed drive {failed_logical_drive_position}. Skipping for this LBA on replacement.", "WARN")
+                        continue # Nothing to rebuild for this LBA on this drive
+                else: # New drive being added/synced
+                    # For a new drive, it gets a fresh physical sector. `write_to_specific_sector` uses `next_physical_sector`.
+                    # We just need to make sure we update the map after the write.
+                    pass 
 
                 rebuilt_data = None
 
@@ -1338,13 +1315,16 @@ class RAIDArray:
                         f"REBUILD ERROR: RAID-0 cannot be rebuilt, data permanently lost for LBA {lba} on failed drive {failed_logical_drive_position}.",
                         "ERROR",
                     )
+                    rebuilt_data = "LOST"
+                    
+                    self.logical_to_physical_map[lba][replacement_drive_id] = -1 # Mark as lost
+                    # And write to disk
                     replacement_drive.write_to_specific_sector(
-                        target_physical_sector_on_replacement,
-                        "LOST",
+                        target_physical_sector_on_replacement if not is_new_drive_add else replacement_drive.next_physical_sector,
+                        rebuilt_data,
                         "PERM_LOST",
                         lba,
                     )
-                    self.logical_to_physical_map[lba][replacement_drive_id] = -1
                     continue
 
                 elif self.raid_level == 1:
@@ -1361,7 +1341,7 @@ class RAIDArray:
                                     break
                                 else:
                                     logger.log(
-                                        f"REBUILD WARN: Could not read data from drive {drive.drive_id} for LBA {lba} at physical sector {mirror_physical_sector}",
+                                        f"REBUILD WARN: Could not read data from mirror drive {drive.drive_id} for LBA {lba} at physical sector {mirror_physical_sector}",
                                         "WARN",
                                     )
                     if rebuilt_data is None:
@@ -1373,69 +1353,41 @@ class RAIDArray:
 
 
                 elif self.raid_level == 5:
-                    # Reconstruct data from remaining data and parity blocks
-                    num_total_raid_drives = len(self.drives)
+                    collected_data_blocks = []
+                    collected_parity_block = None
                     
-                    # We need to find which drive was meant to hold parity for *this* LBA's stripe
-                    # This calculation should be based on original total drives or a stable configuration
-                    
-                    # For a single data block (LBA), RAID-5 stores data on one drive and parity on another.
-                    # We need to determine if the failed/new drive was supposed to hold the data or the parity.
+                    num_total_drives_current = len(self.drives)
+                    conceptual_parity_drive_id_for_lba = self.drives[lba % num_total_drives_current].drive_id
 
-                    # First, identify the data drive and parity drive for this LBA's stripe *conceptually*.
-                    # This calculation is simplified for a single-character logical block per LBA.
-                    
-                    # For simplicity of reconstruction:
-                    # Iterate through all *other* active drives for this LBA and see what data/parity they hold.
-                    
-                    collected_data = []
-                    collected_parity = None
-                    
-                    # Determine which active drive for this LBA held the data
-                    data_drive_for_this_lba = None
-                    for d_id in physical_sector_map_for_lba:
-                        if d_id != replacement_drive_id and d_id < len(self.drives) and self.drives[d_id].is_active:
-                            drive = self.drives[d_id]
-                            p_sector = physical_sector_map_for_lba[d_id]
-                            if p_sector != -1 and p_sector in drive.sectors:
-                                sector_info = drive.sectors[p_sector]
-                                if sector_info["type"] == "DATA":
-                                    collected_data.append(sector_info["data"])
-                                    data_drive_for_this_lba = drive.drive_id
-                                elif sector_info["type"] == "PARITY":
-                                    collected_parity = sector_info["data"]
-
-                    # Now, based on what's available, reconstruct
-                    if not is_new_drive_add and failed_logical_drive_position == data_drive_for_this_lba:
-                        # The data drive failed, reconstruct data using the parity
-                        if collected_parity:
-                            # In this single-block-per-LBA demo, parity is derived directly from the data.
-                            # So if the data block is 'X' and parity is 'P_X', then the missing data is 'X'.
-                            # More realistically, you'd XOR collected_data and collected_parity.
-                            rebuilt_data = chr(int(collected_parity[1:]) % 128) # Simple reverse from PXXX
-                        else:
-                            rebuilt_data = "???" # Cannot reconstruct
-                    elif not is_new_drive_add and failed_logical_drive_position != data_drive_for_this_lba and collected_data:
-                        # The parity drive failed or a new drive is added, recalculate parity
-                        rebuilt_data = self._calculate_parity(collected_data[0] if collected_data else "")
-                    elif is_new_drive_add and collected_data: # New drive, needs the data or parity
-                        # Determine if the new drive *should* hold data or parity for this LBA
-                        num_total_raid_drives = len(self.drives) # Now includes the new drive
-                        active_drives_now = [d for d in self.drives if d.is_active] # Includes new drive
-                        parity_drive_active_index_now = lba % len(active_drives_now)
+                    for d in self.drives:
+                        if d.drive_id == replacement_drive_id or (not is_new_drive_add and d.drive_id == failed_logical_drive_position):
+                            continue
                         
-                        if replacement_drive_id == active_drives_now[parity_drive_active_index_now].drive_id:
-                            # New drive is meant to hold parity
-                            rebuilt_data = self._calculate_parity(collected_data[0] if collected_data else "")
-                        else:
-                            # New drive is meant to hold data
-                            if collected_parity and collected_data:
-                                rebuilt_data = collected_data[0] # Copy data from an existing mirror/source
-                            elif collected_parity:
-                                # Reconstruct data from parity if no direct data source (more complex for single char)
-                                rebuilt_data = chr(int(collected_parity[1:]) % 128)
+                        p_sector = physical_sector_map_for_lba.get(d.drive_id)
+                        if d.is_active and p_sector is not None and p_sector != -1 and p_sector in d.sectors:
+                            sector_info = d.sectors[p_sector]
+                            if d.drive_id == conceptual_parity_drive_id_for_lba:
+                                if sector_info["type"] == "PARITY": collected_parity_block = sector_info["data"]
                             else:
-                                rebuilt_data = "???"
+                                if sector_info["type"] == "DATA": collected_data_blocks.append(sector_info["data"])
+
+                    target_is_parity_drive = (replacement_drive_id == conceptual_parity_drive_id_for_lba)
+
+                    if target_is_parity_drive:
+                        if collected_data_blocks:
+                            rebuilt_data = self._calculate_parity(collected_data_blocks[0])
+                        else:
+                            rebuilt_data = "???"
+                    else:
+                        if collected_parity_block and collected_data_blocks:
+                            parity_val = int(collected_parity_block[1:])
+                            data_val = ord(collected_data_blocks[0])
+                            rebuilt_data = chr((parity_val ^ data_val) % 128)
+                        elif collected_parity_block and not collected_data_blocks:
+                             rebuilt_data = chr(int(collected_parity_block[1:]) % 128)
+                        else:
+                            rebuilt_data = "???"
+
 
                     if rebuilt_data is None:
                         logger.log(
@@ -1446,55 +1398,60 @@ class RAIDArray:
 
 
                 elif self.raid_level == 6:
-                    # Reconstruct data using P and Q parity, handling up to two failures
-                    # Similar logic to RAID-5 reconstruction, but with two parity blocks.
-                    # Simplified for this demo (typically requires Galois Field math).
-                    
-                    collected_data = []
-                    collected_p_parity = None
-                    collected_q_parity = None
+                    collected_data_blocks = []
+                    collected_p_parity_block = None
+                    collected_q_parity_block = None
 
-                    # Collect available data/parity from active drives
-                    for d_id in physical_sector_map_for_lba:
-                        if d_id != replacement_drive_id and d_id < len(self.drives) and self.drives[d_id].is_active:
-                            drive = self.drives[d_id]
-                            p_sector = physical_sector_map_for_lba[d_id]
-                            if p_sector != -1 and p_sector in drive.sectors:
-                                sector_info = drive.sectors[p_sector]
-                                if sector_info["type"] == "DATA":
-                                    collected_data.append(sector_info["data"])
-                                elif sector_info["type"] == "PARITY-P":
-                                    collected_p_parity = sector_info["data"]
-                                elif sector_info["type"] == "PARITY-Q":
-                                    collected_q_parity = sector_info["data"]
+                    num_total_drives_current = len(self.drives)
+                    conceptual_p_drive_id_for_lba = self.drives[lba % num_total_drives_current].drive_id
+                    conceptual_q_drive_id_for_lba = self.drives[(lba + 1) % num_total_drives_current].drive_id
+                    if conceptual_p_drive_id_for_lba == conceptual_q_drive_id_for_lba:
+                        conceptual_q_drive_id_for_lba = self.drives[(lba + 2) % num_total_drives_current].drive_id
 
-                    # Determine if the target drive (failed_logical_drive_position or replacement_drive_id)
-                    # was supposed to hold data, P parity, or Q parity.
-                    
-                    # For single character logical block, reconstruction is simplified:
-                    # If data is missing, and we have P, we can get data back (if only one failure).
-                    # If P is missing, recalculate from data.
-                    # If Q is missing, recalculate from data.
-                    
-                    if not is_new_drive_add and collected_data: # If we have data, we can recalculate parity
-                        if collected_p_parity is None: # P parity missing
-                            rebuilt_data = self._calculate_parity(collected_data[0])
-                        elif collected_q_parity is None: # Q parity missing
-                            q_recalc_val = ord(collected_data[0]) ^ (lba % 100)
+                    for d in self.drives:
+                        if d.drive_id == replacement_drive_id or (not is_new_drive_add and d.drive_id == failed_logical_drive_position):
+                            continue
+                        
+                        p_sector = physical_sector_map_for_lba.get(d.drive_id)
+                        if d.is_active and p_sector is not None and p_sector != -1 and p_sector in d.sectors:
+                            sector_info = d.sectors[p_sector]
+                            if d.drive_id == conceptual_p_drive_id_for_lba:
+                                if sector_info["type"] == "PARITY-P": collected_p_parity_block = sector_info["data"]
+                            elif d.drive_id == conceptual_q_drive_id_for_lba:
+                                if sector_info["type"] == "PARITY-Q": collected_q_parity_block = sector_info["data"]
+                            else:
+                                if sector_info["type"] == "DATA": collected_data_blocks.append(sector_info["data"])
+
+                    target_is_p_drive = (replacement_drive_id == conceptual_p_drive_id_for_lba)
+                    target_is_q_drive = (replacement_drive_id == conceptual_q_drive_id_for_lba)
+                    target_is_data_drive = not (target_is_p_drive or target_is_q_drive)
+
+
+                    if target_is_data_drive:
+                        if collected_p_parity_block and collected_data_blocks:
+                            p_val = int(collected_p_parity_block[1:])
+                            data_val = ord(collected_data_blocks[0])
+                            rebuilt_data = chr((p_val ^ data_val) % 128)
+                        elif collected_q_parity_block and collected_data_blocks:
+                            q_val = int(collected_q_parity_block[1:])
+                            data_val = ord(collected_data_blocks[0])
+                            rebuilt_data = chr((q_val ^ (lba % 100)) % 128)
+                        elif collected_p_parity_block and collected_q_parity_block:
+                            rebuilt_data = chr(int(collected_p_parity_block[1:]) % 128)
+                        else:
+                            rebuilt_data = "???"
+
+                    elif target_is_p_drive:
+                        if collected_data_blocks: rebuilt_data = self._calculate_parity(collected_data_blocks[0])
+                        else: rebuilt_data = "???"
+
+                    elif target_is_q_drive:
+                        if collected_data_blocks:
+                            q_recalc_val = ord(collected_data_blocks[0]) ^ (lba % 100)
                             rebuilt_data = f"Q{q_recalc_val % 1000:03d}"[:4]
-                        else: # Data missing
-                            # With P and Q, and all other data blocks, we can reconstruct the missing data block.
-                            # In this simplified demo, assuming one data block and its P & Q parity
-                            # If only 1 data block, P is data, Q is data XOR LBA info.
-                            rebuilt_data = collected_p_parity[0] if collected_p_parity and collected_p_parity.startswith('P') else (collected_q_parity[0] if collected_q_parity and collected_q_parity.startswith('Q') else "???")
-                            if rebuilt_data.startswith('P'): rebuilt_data = chr(int(rebuilt_data[1:]) % 128) # If data was hidden in P
-                            if rebuilt_data.startswith('Q'): rebuilt_data = chr(int(rebuilt_data[1:]) % 128) # If data was hidden in Q
-                    elif is_new_drive_add and collected_data: # New drive add
-                        # For a new drive, it needs to get its data or parity.
-                        # This requires knowing if the new drive is a data, P, or Q drive for this LBA.
-                        # This is complex in simplified RAID-6, assume it gets copied if it's a data drive.
-                        rebuilt_data = collected_data[0] # Simplistically, if data available, copy.
-                    else:
+                        else: rebuilt_data = "???"
+
+                    if rebuilt_data is None:
                         logger.log(
                             f"REBUILD WARN: No sufficient data/parity to reconstruct LBA {lba} for RAID-6. Assuming data lost.",
                             "WARN",
@@ -1502,21 +1459,19 @@ class RAIDArray:
                         rebuilt_data = "???"
 
                 elif self.raid_level == 10:
-                    # For RAID 10, data reconstruction is local to the mirrored pair.
-                    # Find the mirrored pair that the failed drive belongs to.
                     mirrored_pairs: List[List[Drive]] = []
                     for i in range(0, len(self.drives), 2):
                         mirrored_pairs.append([self.drives[i], self.drives[i + 1]])
 
-                    failed_pair_drives: Optional[List[Drive]] = None
+                    target_pair_drives: Optional[List[Drive]] = None
                     for pair in mirrored_pairs:
-                        if failed_logical_drive_position in [d.drive_id for d in pair]:
-                            failed_pair_drives = pair
+                        if (failed_logical_drive_position in [d.drive_id for d in pair]) or \
+                           (is_new_drive_add and replacement_drive_id in [d.drive_id for d in pair]):
+                            target_pair_drives = pair
                             break
 
-                    if failed_pair_drives:
-                        for drive in failed_pair_drives:
-                            # The other active drive in the pair holds the mirror copy
+                    if target_pair_drives:
+                        for drive in target_pair_drives:
                             if drive.is_active and drive.drive_id != replacement_drive_id:
                                 mirror_physical_sector = physical_sector_map_for_lba.get(
                                     drive.drive_id
@@ -1539,92 +1494,107 @@ class RAIDArray:
                         rebuilt_data = "???"
 
                 elif self.raid_level == 50:
-                    # RAID-50 rebuild involves performing a RAID-5 rebuild within the affected sub-array.
                     min_drives_for_subarray = self.raid_configs[5]["min_drives"]
-                    subarray_index = failed_logical_drive_position // min_drives_for_subarray
+                    current_target_id = failed_logical_drive_position if not is_new_drive_add else replacement_drive_id
+                    subarray_index = current_target_id // min_drives_for_subarray
                     
                     subarray_start_id = subarray_index * min_drives_for_subarray
-                    subarray_drives_global_ids = list(range(subarray_start_id, subarray_start_id + min_drives_for_subarray))
-
-                    active_subarray_drives = [d for d in self.drives if d.drive_id in subarray_drives_global_ids and d.is_active]
                     
-                    if not active_subarray_drives:
-                        logger.log(f"REBUILD ERROR: RAID-50 Subarray {subarray_index} completely failed, cannot reconstruct LBA {lba}.", "ERROR")
-                        rebuilt_data = "???"
-                    else:
-                        # Similar RAID-5 reconstruction logic adapted for subarray
-                        collected_data = []
-                        collected_parity = None
-                        
-                        data_drive_for_this_lba = None
-                        for d_id in physical_sector_map_for_lba:
-                            if d_id in subarray_drives_global_ids and d_id != replacement_drive_id and d_id < len(self.drives) and self.drives[d_id].is_active:
-                                drive = self.drives[d_id]
-                                p_sector = physical_sector_map_for_lba[d_id]
-                                if p_sector != -1 and p_sector in drive.sectors:
-                                    sector_info = drive.sectors[p_sector]
-                                    if sector_info["type"] == "DATA":
-                                        collected_data.append(sector_info["data"])
-                                        data_drive_for_this_lba = drive.drive_id
-                                    elif sector_info["type"] == "PARITY":
-                                        collected_parity = sector_info["data"]
+                    collected_data_blocks = []
+                    collected_parity_block = None
 
-                        if not is_new_drive_add and failed_logical_drive_position == data_drive_for_this_lba:
-                            if collected_parity: rebuilt_data = chr(int(collected_parity[1:]) % 128)
-                            else: rebuilt_data = "???"
-                        elif not is_new_drive_add and failed_logical_drive_position != data_drive_for_this_lba and collected_data:
-                            rebuilt_data = self._calculate_parity(collected_data[0] if collected_data else "")
-                        elif is_new_drive_add and collected_data:
-                            rebuilt_data = collected_data[0]
-                        else:
-                            rebuilt_data = "???"
+                    conceptual_subarray_parity_drive_id_for_lba = self.drives[subarray_start_id + (lba % min_drives_for_subarray)].drive_id
+
+                    for drive_id_in_subarray in range(subarray_start_id, subarray_start_id + min_drives_for_subarray):
+                        d = next((drv for drv in self.drives if drv.drive_id == drive_id_in_subarray), None)
+                        if d is None: continue
+                        
+                        if d.drive_id == replacement_drive_id or (not is_new_drive_add and d.drive_id == failed_logical_drive_position):
+                            continue
+
+                        p_sector = physical_sector_map_for_lba.get(d.drive_id)
+                        if d.is_active and p_sector is not None and p_sector != -1 and p_sector in d.sectors:
+                            sector_info = d.sectors[p_sector]
+                            if d.drive_id == conceptual_subarray_parity_drive_id_for_lba:
+                                if sector_info["type"] == "PARITY": collected_parity_block = sector_info["data"]
+                            else:
+                                if sector_info["type"] == "DATA": collected_data_blocks.append(sector_info["data"])
+                    
+                    target_is_subarray_parity_drive = (replacement_drive_id == conceptual_subarray_parity_drive_id_for_lba)
+
+                    if target_is_subarray_parity_drive:
+                        if collected_data_blocks: rebuilt_data = self._calculate_parity(collected_data_blocks[0])
+                        else: rebuilt_data = "???"
+                    else: # Target needs data within subarray
+                        if collected_parity_block and collected_data_blocks:
+                            parity_val = int(collected_parity_block[1:])
+                            data_val = ord(collected_data_blocks[0])
+                            rebuilt_data = chr((parity_val ^ data_val) % 128)
+                        elif collected_parity_block and not collected_data_blocks:
+                             rebuilt_data = chr(int(collected_parity_block[1:]) % 128)
+                        else: rebuilt_data = "???"
 
                     if rebuilt_data is None:
                         logger.log(f"REBUILD WARN: RAID-50 Subarray {subarray_index}: No sufficient data/parity to reconstruct LBA {lba}. Assuming data lost.", "WARN")
                         rebuilt_data = "???"
 
                 elif self.raid_level == 60:
-                    # RAID-60 rebuild involves performing a RAID-6 rebuild within the affected sub-array.
                     min_drives_for_subarray = self.raid_configs[6]["min_drives"]
-                    subarray_index = failed_logical_drive_position // min_drives_for_subarray
+                    current_target_id = failed_logical_drive_position if not is_new_drive_add else replacement_drive_id
+                    subarray_index = current_target_id // min_drives_for_subarray
 
                     subarray_start_id = subarray_index * min_drives_for_subarray
-                    subarray_drives_global_ids = list(range(subarray_start_id, subarray_start_id + min_drives_for_subarray))
+                    
+                    collected_data_blocks = []
+                    collected_p_parity_block = None
+                    collected_q_parity_block = None
 
-                    active_subarray_drives = [d for d in self.drives if d.drive_id in subarray_drives_global_ids and d.is_active]
+                    conceptual_p_drive_id = self.drives[subarray_start_id + (lba % min_drives_for_subarray)].drive_id
+                    conceptual_q_drive_id = self.drives[subarray_start_id + ((lba + 1) % min_drives_for_subarray)].drive_id
+                    if conceptual_p_drive_id == conceptual_q_drive_id:
+                        conceptual_q_drive_id = self.drives[subarray_start_id + ((lba + 2) % min_drives_for_subarray)].drive_id # Shift to next unique index
 
-                    if not active_subarray_drives:
-                        logger.log(f"REBUILD ERROR: RAID-60 Subarray {subarray_index} completely failed, cannot reconstruct LBA {lba}.", "ERROR")
-                        rebuilt_data = "???"
-                    else:
-                        # Similar RAID-6 reconstruction logic adapted for subarray
-                        collected_data = []
-                        collected_p_parity = None
-                        collected_q_parity = None
+                    for drive_id_in_subarray in range(subarray_start_id, subarray_start_id + min_drives_for_subarray):
+                        d = next((drv for drv in self.drives if drv.drive_id == drive_id_in_subarray), None)
+                        if d is None: continue
 
-                        for d_id in physical_sector_map_for_lba:
-                            if d_id in subarray_drives_global_ids and d_id != replacement_drive_id and d_id < len(self.drives) and self.drives[d_id].is_active:
-                                drive = self.drives[d_id]
-                                p_sector = physical_sector_map_for_lba[d_id]
-                                if p_sector != -1 and p_sector in drive.sectors:
-                                    sector_info = drive.sectors[p_sector]
-                                    if sector_info["type"] == "DATA":
-                                        collected_data.append(sector_info["data"])
-                                    elif sector_info["type"] == "PARITY-P":
-                                        collected_p_parity = sector_info["data"]
-                                    elif sector_info["type"] == "PARITY-Q":
-                                        collected_q_parity = sector_info["data"]
+                        if d.drive_id == replacement_drive_id or (not is_new_drive_add and d.drive_id == failed_logical_drive_position):
+                            continue
+
+                        p_sector = physical_sector_map_for_lba.get(d.drive_id)
+                        if d.is_active and p_sector is not None and p_sector != -1 and p_sector in d.sectors:
+                            sector_info = d.sectors[p_sector]
+                            if d.drive_id == conceptual_p_drive_id:
+                                if sector_info["type"] == "PARITY-P": collected_p_parity_block = sector_info["data"]
+                            elif d.drive_id == conceptual_q_drive_id:
+                                if sector_info["type"] == "PARITY-Q": collected_q_parity_block = sector_info["data"]
+                            else:
+                                if sector_info["type"] == "DATA": collected_data_blocks.append(sector_info["data"])
                         
-                        if not is_new_drive_add and collected_data:
-                            if collected_p_parity is None: rebuilt_data = self._calculate_parity(collected_data[0])
-                            elif collected_q_parity is None:
-                                q_recalc_val = ord(collected_data[0]) ^ (lba % 100)
-                                rebuilt_data = f"Q{q_recalc_val % 1000:03d}"[:4]
-                            else: rebuilt_data = collected_data[0]
-                        elif is_new_drive_add and collected_data:
-                            rebuilt_data = collected_data[0]
-                        else:
-                            rebuilt_data = "???"
+                    target_is_p_drive = (replacement_drive_id == conceptual_p_drive_id)
+                    target_is_q_drive = (replacement_drive_id == conceptual_q_drive_id)
+                    target_is_data_drive = not (target_is_p_drive or target_is_q_drive)
+
+                    if target_is_data_drive:
+                        if collected_p_parity_block and collected_q_parity_block and collected_data_blocks:
+                            p_val = int(collected_p_parity_block[1:])
+                            data_val = ord(collected_data_blocks[0])
+                            rebuilt_data = chr((p_val ^ data_val) % 128)
+                        elif collected_p_parity_block and not collected_q_parity_block and not collected_data_blocks:
+                            rebuilt_data = chr(int(collected_p_parity_block[1:]) % 128)
+                        elif collected_q_parity_block and not collected_p_parity_block and not collected_data_blocks:
+                             q_val = int(collected_q_parity_block[1:])
+                             rebuilt_data = chr((q_val ^ (lba % 100)) % 128)
+                        else: rebuilt_data = "???"
+
+                    elif target_is_p_drive:
+                        if collected_data_blocks: rebuilt_data = self._calculate_parity(collected_data_blocks[0])
+                        else: rebuilt_data = "???"
+                    elif target_is_q_drive:
+                        if collected_data_blocks:
+                            q_recalc_val = ord(collected_data_blocks[0]) ^ (lba % 100)
+                            rebuilt_data = f"Q{q_recalc_val % 1000:03d}"[:4]
+                        else: rebuilt_data = "???"
 
                     if rebuilt_data is None:
                         logger.log(f"REBUILD WARN: RAID-60 Subarray {subarray_index}: No sufficient data/parity to reconstruct LBA {lba}. Assuming data lost.", "WARN")
@@ -1632,19 +1602,26 @@ class RAIDArray:
 
 
                 if rebuilt_data is not None:
-                    # Write the reconstructed data to the replacement drive
-                    replacement_drive.write_to_specific_sector(
-                        target_physical_sector_on_replacement, rebuilt_data, "REBUILT" if not is_new_drive_add else "SYNCED", lba
-                    )
+                    # Determine the actual physical sector to write to
+                    actual_physical_sector_to_write = target_physical_sector_on_replacement
+                    if is_new_drive_add: # A new drive just takes the next available sector
+                        actual_physical_sector_to_write = replacement_drive.next_physical_sector
+
                     # Update the logical-to-physical map to point to the new drive's sector
-                    self.logical_to_physical_map[lba][replacement_drive_id] = target_physical_sector_on_replacement
+                    self.logical_to_physical_map[lba][replacement_drive_id] = actual_physical_sector_to_write
+                    replacement_drive.write_to_specific_sector(
+                        actual_physical_sector_to_write, rebuilt_data, "REBUILT" if not is_new_drive_add else "SYNCED", lba
+                    )
                 else:
                     logger.log(
                         f"REBUILD ERROR: Failed to reconstruct data for LBA {lba} on failed logical position {failed_logical_drive_position}",
                         "ERROR",
                     )
+                    self.logical_to_physical_map[lba][replacement_drive_id] = -1 # Mark as failed to rebuild
+                    # Also write an error marker to the disk's file
                     replacement_drive.write_to_specific_sector(
-                        target_physical_sector_on_replacement, "ERROR", "REBUILD-FAIL", lba
+                        target_physical_sector_on_replacement if not is_new_drive_add else replacement_drive.next_physical_sector,
+                        "ERROR", "REBUILD-FAIL", lba
                     )
 
                 progress = ((lba + 1) / total_logical_blocks) * 100
@@ -1663,6 +1640,249 @@ class RAIDArray:
         finally:
             self.rebuild_active = False
             self.health_check()  # Run a health check after rebuild
+
+    def start_rebalance(self, new_drive_id: int):
+        """
+        Starts the rebalance process for RAID-0, 5, 6 when a new drive is added.
+        This will redistribute existing logical blocks across all active drives,
+        including the newly added one.
+        """
+        if self.rebalance_active:
+            logger.log("REBALANCE: Another rebalance is already active.", "WARN")
+            print("\033[93mWARNING: Another rebalance is already active. Please wait.\033[0m")
+            return
+        if self.rebuild_active:
+            logger.log("REBALANCE: A rebuild is currently active, cannot start rebalance.", "WARN")
+            print("\033[93mWARNING: A rebuild is currently active. Please wait for it to complete.\033[0m")
+            return
+
+        self.rebalance_active = True
+        self.rebalance_thread = threading.Thread(
+            target=self._rebalance_worker, args=(new_drive_id,), daemon=True
+        )
+        self.rebalance_thread.start()
+        logger.log(f"Started rebalance process for RAID-{self.raid_level} with new drive {new_drive_id}")
+        print(f"\n\033[92mRebalance process started for RAID-{self.raid_level}. Data is being redistributed. Check logs for progress.\033[0m")
+
+    def _rebalance_worker(self, new_drive_id: int):
+        """
+        The background worker thread that performs the data redistribution
+        when a new drive is added for RAID-0, 5, or 6.
+        """
+        try:
+            logger.log(f"REBALANCE: Starting rebalance with new drive {new_drive_id}")
+            
+            # Make sure new drive is active and marked for rebalance
+            new_drive_obj = self.drives[new_drive_id]
+            new_drive_obj.is_active = True
+            new_drive_obj.metadata["status"] = "rebalancing"
+            new_drive_obj._update_file()
+            # It also needs its sectors cleared, as it's a new drive being incorporated into existing data.
+            new_drive_obj.sectors = {}
+            new_drive_obj.next_physical_sector = 0
+
+
+            # Store the old logical_to_physical_map before rebuilding it
+            old_logical_to_physical_map_snapshot = dict(self.logical_to_physical_map)
+            
+            # We'll build a completely new logical_to_physical_map during rebalance
+            new_logical_to_physical_map_in_progress = {} 
+
+            # Temporarily clear all existing drives' sectors that might hold old data
+            # This is a bit aggressive but ensures we write fresh data.
+            # A more nuanced approach would selectively delete. For demo, this works.
+            # Store current sectors to clear them
+            old_sectors_per_drive: Dict[int, Dict[int, Dict[str, Any]]] = {}
+            for d in self.drives:
+                if d.is_active: # Only clear active drives' data, failed drives are ignored
+                    old_sectors_per_drive[d.drive_id] = dict(d.sectors) # Snapshot old sectors
+                    d.sectors = {} # Clear for fresh writes
+                    d.next_physical_sector = 0 # Reset physical sector counter for fresh writes
+                    d._update_file()
+
+
+            total_logical_blocks = self.current_logical_block_index
+            if total_logical_blocks == 0:
+                logger.log("REBALANCE: No logical blocks to rebalance.", "INFO")
+                new_drive_obj.metadata["status"] = "active"
+                new_drive_obj._update_file()
+                self._save_config()
+                print("\033[92mRebalance completed: No data to redistribute.\033[0m")
+                return
+
+            # Active drives list now includes the new drive
+            active_drives_for_rebalance = [d for d in self.drives if d.is_active]
+
+
+            for lba in range(total_logical_blocks):
+                if not self.rebalance_active:
+                    break
+
+                time.sleep(0.05)
+
+                original_data_for_lba = None
+                old_lba_map = old_logical_to_physical_map_snapshot.get(lba, {})
+
+                # Try to retrieve original data from *any* active drive in the old configuration.
+                # For RAID-0, just get it from the single drive it was on.
+                # For RAID-5/6, reconstruct from available data/parity from the old map.
+                
+                # We need the conceptual type (DATA/PARITY) and location logic from the time it was written.
+                # This is tricky because the old map directly tells us where it was.
+                # Let's rebuild this logic for each RAID level for data retrieval.
+
+                if self.raid_level == 0:
+                    for old_drive_id, old_p_sector in old_lba_map.items():
+                        if old_drive_id < len(self.drives):
+                            old_drive_obj = self.drives[old_drive_id]
+                            if old_drive_obj.is_active and old_p_sector != -1 and old_p_sector in old_sectors_per_drive.get(old_drive_id, {}):
+                                original_data_for_lba = old_sectors_per_drive[old_drive_id][old_p_sector]["data"]
+                                break
+                elif self.raid_level == 5:
+                    # Reconstruct data for LBA from old sources
+                    collected_old_data = []
+                    collected_old_parity = None
+                    num_old_drives = len(self.drives) - 1 # One less for the newly added one
+                    
+                    # Conceptual parity drive based on original (pre-add) total drives for this LBA.
+                    # This requires knowing the old number of drives *before* new_drive_id was added.
+                    # This is best simplified: find any active data block, or reconstruct from parity.
+                    
+                    # For simplicity: find an active DATA block from old snapshot.
+                    for old_drive_id, old_p_sector in old_lba_map.items():
+                        if old_drive_id < len(self.drives):
+                            old_drive_obj = self.drives[old_drive_id] # This is the object, active state
+                            if old_drive_obj.is_active and old_p_sector != -1 and old_p_sector in old_sectors_per_drive.get(old_drive_id, {}):
+                                sector_info = old_sectors_per_drive[old_drive_id][old_p_sector]
+                                if sector_info["type"] == "DATA":
+                                    original_data_for_lba = sector_info["data"]
+                                    break
+                                elif sector_info["type"] == "PARITY" and not original_data_for_lba:
+                                    # If no data found, and we find parity, we can reconstruct
+                                    original_data_for_lba = chr(int(sector_info["data"][1:]) % 128) # Pxxx -> char
+                                    
+                elif self.raid_level == 6:
+                    # Reconstruct data for LBA from old sources (P or Q)
+                    collected_old_data = []
+                    collected_old_p = None
+                    collected_old_q = None
+
+                    for old_drive_id, old_p_sector in old_lba_map.items():
+                        if old_drive_id < len(self.drives):
+                            old_drive_obj = self.drives[old_drive_id]
+                            if old_drive_obj.is_active and old_p_sector != -1 and old_p_sector in old_sectors_per_drive.get(old_drive_id, {}):
+                                sector_info = old_sectors_per_drive[old_drive_id][old_p_sector]
+                                if sector_info["type"] == "DATA":
+                                    original_data_for_lba = sector_info["data"]
+                                    break
+                                elif sector_info["type"] == "PARITY-P" and not original_data_for_lba:
+                                    collected_old_p = sector_info["data"]
+                                elif sector_info["type"] == "PARITY-Q" and not original_data_for_lba:
+                                    collected_old_q = sector_info["data"]
+                    
+                    if original_data_for_lba is None:
+                        if collected_old_p:
+                            original_data_for_lba = chr(int(collected_old_p[1:]) % 128) # Recover from P
+                        elif collected_old_q:
+                            # Reconstruct from Q (more complex for real RAID-6, simplify for demo)
+                            q_val = int(collected_old_q[1:])
+                            original_data_for_lba = chr((q_val ^ (lba % 100)) % 128)
+                        
+                if original_data_for_lba is None:
+                    logger.log(f"REBALANCE WARN: Could not find original data for LBA {lba} during rebalance. Data permanently lost for this LBA.", "WARN")
+                    new_logical_to_physical_map_in_progress[lba] = {} # Mark as empty/lost
+                    continue
+
+
+                # --- Write the data for this LBA using the NEW stripe pattern ---
+                # This simulates rewriting the LBA's content to the array,
+                # which naturally distributes it across the new set of drives.
+                try:
+                    # The internal _write_raidX methods already increment next_physical_sector on target drives.
+                    # They also populate self.logical_to_physical_map[lba].
+                    # Temporarily use a copy of self.drives including the new drive
+                    # and ensure the map is correctly populated.
+                    
+                    # We need to provide the LBA and the original_data_for_lba to the write method
+                    # And capture the mapping produced by this write.
+                    
+                    # Need to clear this LBA's entry in current `self.logical_to_physical_map`
+                    # which is `new_logical_to_physical_map_in_progress`
+                    new_logical_to_physical_map_in_progress[lba] = {} 
+
+                    if self.raid_level == 0:
+                        # For RAID-0, this LBA maps to a new single drive.
+                        target_drive_obj = active_drives_for_rebalance[lba % len(active_drives_for_rebalance)]
+                        physical_sector = target_drive_obj.write_sector(original_data_for_lba, "DATA", lba)
+                        new_logical_to_physical_map_in_progress[lba][target_drive_obj.drive_id] = physical_sector
+                    
+                    elif self.raid_level == 5:
+                        # For RAID-5, rewrite data + parity
+                        parity_drive_idx_new_stripe = lba % len(active_drives_for_rebalance)
+                        parity_drive_obj = active_drives_for_rebalance[parity_drive_idx_new_stripe]
+                        
+                        data_drives_for_stripe_new = [d for i,d in enumerate(active_drives_for_rebalance) if i != parity_drive_idx_new_stripe]
+                        data_drive_obj = data_drives_for_stripe_new[lba % len(data_drives_for_stripe_new)]
+                        
+                        physical_sector_data = data_drive_obj.write_sector(original_data_for_lba, "DATA", lba)
+                        new_logical_to_physical_map_in_progress[lba][data_drive_obj.drive_id] = physical_sector_data
+                        
+                        parity_char = self._calculate_parity(original_data_for_lba)
+                        physical_sector_parity = parity_drive_obj.write_sector(parity_char, "PARITY", lba)
+                        new_logical_to_physical_map_in_progress[lba][parity_drive_obj.drive_id] = physical_sector_parity
+
+                    elif self.raid_level == 6:
+                        # For RAID-6, rewrite data + P + Q parity
+                        p_drive_idx_new_stripe = lba % len(active_drives_for_rebalance)
+                        q_drive_idx_new_stripe = (lba + 1) % len(active_drives_for_rebalance)
+                        if p_drive_idx_new_stripe == q_drive_idx_new_stripe:
+                            q_drive_idx_new_stripe = (q_drive_idx_new_stripe + 1) % len(active_drives_for_rebalance)
+                        
+                        p_drive_obj = active_drives_for_rebalance[p_drive_idx_new_stripe]
+                        q_drive_obj = active_drives_for_rebalance[q_drive_idx_new_stripe]
+
+                        data_drives_for_stripe_new = [d for i,d in enumerate(active_drives_for_rebalance) if i not in [p_drive_idx_new_stripe, q_drive_idx_new_stripe]]
+                        data_drive_obj = data_drives_for_stripe_new[lba % len(data_drives_for_stripe_new)]
+
+                        physical_sector_data = data_drive_obj.write_sector(original_data_for_lba, "DATA", lba)
+                        new_logical_to_physical_map_in_progress[lba][data_drive_obj.drive_id] = physical_sector_data
+
+                        p_parity_char = self._calculate_parity(original_data_for_lba)
+                        physical_sector_p = p_drive_obj.write_sector(p_parity_char, "PARITY-P", lba)
+                        new_logical_to_physical_map_in_progress[lba][p_drive_obj.drive_id] = physical_sector_p
+
+                        q_parity_val = ord(original_data_for_lba) ^ (lba % 100)
+                        q_parity_char = f"Q{q_parity_val % 1000:03d}"[:4]
+                        physical_sector_q = q_drive_obj.write_sector(q_parity_char, "PARITY-Q", lba)
+                        new_logical_to_physical_map_in_progress[lba][q_drive_obj.drive_id] = physical_sector_q
+
+                    # Update the global map with the new entry for this LBA
+                    self.logical_to_physical_map[lba] = new_logical_to_physical_map_in_progress[lba]
+
+                except Exception as e:
+                    logger.log(f"REBALANCE ERROR: Failed to re-write LBA {lba} to new stripe during rebalance: {e}", "ERROR")
+                    self.logical_to_physical_map[lba] = {} # Mark as failed to rebalance
+                
+                progress = ((lba + 1) / total_logical_blocks) * 100
+                logger.log(f"REBALANCE: Progress {progress:.1f}% - Logical Block {lba}")
+            
+            # Final state update for all drives
+            for d in self.drives:
+                d._update_file() # Ensure file reflects cleared sectors if any were touched
+            
+            new_drive_obj.metadata["status"] = "active"
+            new_drive_obj._update_file()
+            self._save_config() # Save the final state after rebalance
+            logger.log("REBALANCE: Drive rebalance completed successfully.")
+            print("\033[92mRebalance completed successfully! All data redistributed.\033[0m")
+
+        except Exception as e:
+            logger.log(f"REBALANCE: Error during rebalance - {e}", "ERROR")
+            print(f"\033[91mERROR: Rebalance failed due to an unexpected error: {e}\033[0m")
+
+        finally:
+            self.rebalance_active = False
+            self.health_check()
 
     def health_check(self):
         """
@@ -1687,12 +1907,15 @@ class RAIDArray:
         else:
             print("\033[92mSTATUS: HEALTHY - All configured drives are active.\033[0m")
 
-        # 2. Check rebuild status
+        # 2. Check rebuild/rebalance status
         if self.rebuild_active:
             print("\033[93mREBUILD: In progress.\033[0m")
             health_status = "DEGRADED (Rebuild In Progress)"
-        elif "DEGRADED" in health_status and not self.rebuild_active:
-            print("\033[93mREBUILD: Recommended - No rebuild is currently active despite degraded state.\033[0m")
+        elif self.rebalance_active:
+            print("\033[93mREBALANCE: In progress.\033[0m")
+            health_status = "DEGRADED (Rebalance In Progress)"
+        elif "DEGRADED" in health_status and not self.rebuild_active and not self.rebalance_active:
+            print("\033[93mREBUILD: Recommended - No rebuild or rebalance is currently active despite degraded state.\033[0m")
 
         # 3. Drive-specific status checks (like signature mismatches, missing files)
         for drive in self.drives:
@@ -1707,152 +1930,94 @@ class RAIDArray:
                 drive.mark_failed()  # Immediately mark as failed
                 health_status = "CRITICAL"
 
-        # 4. Data Consistency/Block Mapping Check - This is a conceptual check
+        # 4. Data Consistency/Block Mapping Check - THIS IS THE CRITICAL SECTION TO UPDATE
         print("\nDATA CONSISTENCY CHECK:")
         inconsistent_blocks = []
+        
         for lba in range(self.current_logical_block_index):
             mapped_drives_for_lba = self.logical_to_physical_map.get(lba, {})
+            
+            # --- Collect active and readable blocks for this LBA ---
+            available_sources = [] # list of (drive_id, sector_type)
+            for d in self.drives:
+                p_sector = mapped_drives_for_lba.get(d.drive_id)
+                if d.is_active and p_sector is not None and p_sector != -1 and p_sector in d.sectors:
+                    available_sources.append((d.drive_id, d.sectors[p_sector].get("type")))
+            
+            num_available_sources = len(available_sources)
+            # num_total_drives_in_array is problematic for LBA-specific checks in RAID0/5/6
+            # instead, rely on `num_available_sources` relative to *expected components* for that LBA.
 
-            actual_data_present = 0
-            for drive_id, p_sector in mapped_drives_for_lba.items():
-                if drive_id < len(self.drives):
-                    drive_obj = self.drives[drive_id]
-                    if drive_obj.is_active and p_sector != -1:
-                        if p_sector in drive_obj.sectors:
-                            actual_data_present += 1
-                        # else: # Mapped, active, but sector not found in drive's internal sectors - This should be caught by earlier checks
-                            # logger.log(f"LBA {lba}, Drive {drive_id}: Mapped physical sector {p_sector} not found on active drive's internal sectors.", "WARN")
-                    elif p_sector == -1:
-                        logger.log(
-                            f"LBA {lba}, Drive {drive_id}: Marked as permanently lost block.", "INFO"
-                        )
-
-            # Logic to determine data integrity based on RAID level
-            num_total_stripe_members = len(self.drives)
             if self.raid_level == 0:
-                if actual_data_present < num_total_stripe_members:
-                    inconsistent_blocks.append(
-                        f"LBA {lba} (RAID-0: CRITICAL data loss, {num_total_stripe_members - actual_data_present} parts missing)"
-                    )
-                    if health_status != "CRITICAL": health_status = "CRITICAL" # Promote to critical if not already
+                expected_components_for_lba = 1 
+                if num_available_sources == 0:
+                    inconsistent_blocks.append(f"LBA {lba} (RAID-0: CRITICAL - Data permanently lost, no sources available.)")
+                    if health_status != "CRITICAL": health_status = "CRITICAL"
 
             elif self.raid_level == 1:
-                if actual_data_present == 0:
-                    inconsistent_blocks.append(
-                        f"LBA {lba} (RAID-1: CRITICAL data loss, no active copies remain)"
-                    )
+                num_expected_mirrors = len(self.drives)
+                if num_available_sources == 0:
+                    inconsistent_blocks.append(f"LBA {lba} (RAID-1: CRITICAL - No active mirror copies remain.)")
                     if health_status != "CRITICAL": health_status = "CRITICAL"
-                elif actual_data_present < num_total_stripe_members:
-                    inconsistent_blocks.append(
-                        f"LBA {lba} (RAID-1: DEGRADED, {num_total_stripe_members - actual_data_present} mirror copies missing)"
-                    )
+                elif num_available_sources < num_expected_mirrors:
+                    inconsistent_blocks.append(f"LBA {lba} (RAID-1: DEGRADED - {num_expected_mirrors - num_available_sources} mirror copies missing. Rebuildable.)")
                     if health_status == "OK": health_status = "INCONSISTENT"
 
             elif self.raid_level == 5:
-                # Need (N-1) drives to reconstruct. N is num_total_stripe_members.
-                # So we need at least (num_total_stripe_members - 1) active data sources.
-                if actual_data_present < (num_total_stripe_members - self.raid_configs[5]['fault_tolerance']):
-                    inconsistent_blocks.append(f"LBA {lba} (RAID-5: CRITICAL data loss, {num_total_stripe_members - actual_data_present} sources missing. Beyond fault tolerance.)")
+                expected_components_for_lba = 2 # 1 data + 1 parity
+
+                if num_available_sources == 0:
+                    inconsistent_blocks.append(f"LBA {lba} (RAID-5: CRITICAL - No data or parity sources available.)")
                     if health_status != "CRITICAL": health_status = "CRITICAL"
-                elif actual_data_present < num_total_stripe_members:
-                    inconsistent_blocks.append(f"LBA {lba} (RAID-5: Degraded, {num_total_stripe_members - actual_data_present} sources missing. Rebuildable.)")
+                elif num_available_sources == 1:
+                    inconsistent_blocks.append(f"LBA {lba} (RAID-5: DEGRADED - 1 source missing. Rebuildable.)")
                     if health_status == "OK": health_status = "INCONSISTENT"
 
             elif self.raid_level == 6:
-                # Need (N-2) drives to reconstruct.
-                if actual_data_present < (num_total_stripe_members - self.raid_configs[6]['fault_tolerance']):
-                    inconsistent_blocks.append(f"LBA {lba} (RAID-6: CRITICAL data loss, {num_total_stripe_members - actual_data_present} sources missing. Beyond fault tolerance.)")
-                    if health_status != "CRITICAL": health_status = "CRITICAL"
-                elif actual_data_present < num_total_stripe_members:
-                    inconsistent_blocks.append(f"LBA {lba} (RAID-6: Degraded, {num_total_stripe_members - actual_data_present} sources missing. Rebuildable.)")
-                    if health_status == "OK": health_status = "INCONSISTENT"
-            
-            elif self.raid_level == 10:
-                num_mirrored_pairs = len(self.drives) // 2
-                pairs_with_critical_data_loss = 0
-                pairs_with_degraded_status = 0
+                expected_components_for_lba = 3 # 1 data + 1 P-parity + 1 Q-parity
 
-                for i in range(num_mirrored_pairs):
-                    pair_drives_global_ids = [self.drives[2*i].drive_id, self.drives[2*i+1].drive_id]
-                    active_sources_in_pair = 0
-                    for d_id in pair_drives_global_ids:
-                        if d_id in mapped_drives_for_lba and self.drives[d_id].is_active and mapped_drives_for_lba[d_id] != -1:
-                            if mapped_drives_for_lba[d_id] in self.drives[d_id].sectors:
-                                active_sources_in_pair += 1
-                    
-                    if active_sources_in_pair == 0:
-                        pairs_with_critical_data_loss += 1
-                        inconsistent_blocks.append(f"LBA {lba} (RAID-10 Mirrored Pair {pair_drives_global_ids}: CRITICAL data loss, both drives in pair failed.)")
-                    elif active_sources_in_pair == 1:
-                        pairs_with_degraded_status += 1
-                        inconsistent_blocks.append(f"LBA {lba} (RAID-10 Mirrored Pair {pair_drives_global_ids}: Degraded, one drive in pair failed. Rebuildable.)")
-                
-                if pairs_with_critical_data_loss > 0:
+                if num_available_sources == 0:
+                    inconsistent_blocks.append(f"LBA {lba} (RAID-6: CRITICAL - No data or parity sources available.)")
                     if health_status != "CRITICAL": health_status = "CRITICAL"
-                elif pairs_with_degraded_status > 0 and health_status == "OK":
-                    health_status = "INCONSISTENT"
+                elif num_available_sources == 1:
+                    inconsistent_blocks.append(f"LBA {lba} (RAID-6: DEGRADED - 2 sources missing. Rebuildable.)")
+                    if health_status == "OK": health_status = "INCONSISTENT"
+                elif num_available_sources == 2:
+                    inconsistent_blocks.append(f"LBA {lba} (RAID-6: DEGRADED - 1 source missing. Rebuildable.)")
+                    if health_status == "OK": health_status = "INCONSISTENT"
+
+            elif self.raid_level == 10:
+                expected_components_for_lba = 2 # 2 mirrored copies for each LBA
+
+                if num_available_sources == 0:
+                    inconsistent_blocks.append(f"LBA {lba} (RAID-10: CRITICAL - No active mirror copies remain.)")
+                    if health_status != "CRITICAL": health_status = "CRITICAL"
+                elif num_available_sources == 1:
+                    inconsistent_blocks.append(f"LBA {lba} (RAID-10: DEGRADED - 1 mirror copy missing. Rebuildable.)")
+                    if health_status == "OK": health_status = "INCONSISTENT"
 
             elif self.raid_level == 50:
-                min_drives_for_subarray = self.raid_configs[5]["min_drives"]
-                subarray_fault_tolerance = self.raid_configs[5]["fault_tolerance"]
-                num_subarrays = len(self.drives) // min_drives_for_subarray
-                
-                critical_subarrays_for_lba = 0
-                degraded_subarrays_for_lba = 0
+                expected_components_for_lba_subarray = 2 # 1 data + 1 parity within the subarray for this LBA
 
-                for i in range(num_subarrays):
-                    subarray_start_id = i * min_drives_for_subarray
-                    subarray_end_id = subarray_start_id + min_drives_for_subarray
-                    subarray_drives_global_ids = list(range(subarray_start_id, subarray_end_id))
-
-                    active_data_sources_in_subarray = 0
-                    for d_id in subarray_drives_global_ids:
-                        if d_id in mapped_drives_for_lba and self.drives[d_id].is_active and mapped_drives_for_lba[d_id] != -1:
-                            if mapped_drives_for_lba[d_id] in self.drives[d_id].sectors:
-                                active_data_sources_in_subarray += 1
-                    
-                    if active_data_sources_in_subarray < (min_drives_for_subarray - subarray_fault_tolerance):
-                        critical_subarrays_for_lba += 1
-                        inconsistent_blocks.append(f"LBA {lba} (RAID-50 Subarray {i}: CRITICAL data loss. Beyond fault tolerance.)")
-                    elif active_data_sources_in_subarray < min_drives_for_subarray:
-                        degraded_subarrays_for_lba += 1
-                        inconsistent_blocks.append(f"LBA {lba} (RAID-50 Subarray {i}: Degraded. Rebuildable.)")
-                
-                if critical_subarrays_for_lba > 0:
+                if num_available_sources == 0:
+                    inconsistent_blocks.append(f"LBA {lba} (RAID-50 Subarray: CRITICAL - No data or parity sources for this LBA.)")
                     if health_status != "CRITICAL": health_status = "CRITICAL"
-                elif degraded_subarrays_for_lba > 0 and health_status == "OK":
-                    health_status = "INCONSISTENT"
+                elif num_available_sources == 1:
+                    inconsistent_blocks.append(f"LBA {lba} (RAID-50 Subarray: DEGRADED - 1 source missing for this LBA. Rebuildable.)")
+                    if health_status == "OK": health_status = "INCONSISTENT"
 
             elif self.raid_level == 60:
-                min_drives_for_subarray = self.raid_configs[6]["min_drives"]
-                subarray_fault_tolerance = self.raid_configs[6]["fault_tolerance"]
-                num_subarrays = len(self.drives) // min_drives_for_subarray
-                
-                critical_subarrays_for_lba = 0
-                degraded_subarrays_for_lba = 0
+                expected_components_for_lba_subarray = 3 # 1 data + 1 P-parity + 1 Q-parity within the subarray for this LBA
 
-                for i in range(num_subarrays):
-                    subarray_start_id = i * min_drives_for_subarray
-                    subarray_end_id = subarray_start_id + min_drives_for_subarray
-                    subarray_drives_global_ids = list(range(subarray_start_id, subarray_end_id))
-
-                    active_data_sources_in_subarray = 0
-                    for d_id in subarray_drives_global_ids:
-                        if d_id in mapped_drives_for_lba and self.drives[d_id].is_active and mapped_drives_for_lba[d_id] != -1:
-                            if mapped_drives_for_lba[d_id] in self.drives[d_id].sectors:
-                                active_data_sources_in_subarray += 1
-                    
-                    if active_data_sources_in_subarray < (min_drives_for_subarray - subarray_fault_tolerance):
-                        critical_subarrays_for_lba += 1
-                        inconsistent_blocks.append(f"LBA {lba} (RAID-60 Subarray {i}: CRITICAL data loss. Beyond fault tolerance.)")
-                    elif active_data_sources_in_subarray < min_drives_for_subarray:
-                        degraded_subarrays_for_lba += 1
-                        inconsistent_blocks.append(f"LBA {lba} (RAID-60 Subarray {i}: Degraded. Rebuildable.)")
-                
-                if critical_subarrays_for_lba > 0:
+                if num_available_sources == 0:
+                    inconsistent_blocks.append(f"LBA {lba} (RAID-60 Subarray: CRITICAL - No data or parity sources for this LBA.)")
                     if health_status != "CRITICAL": health_status = "CRITICAL"
-                elif degraded_subarrays_for_lba > 0 and health_status == "OK":
-                    health_status = "INCONSISTENT"
+                elif num_available_sources == 1:
+                    inconsistent_blocks.append(f"LBA {lba} (RAID-60 Subarray: DEGRADED - 2 sources missing for this LBA. Rebuildable.)")
+                    if health_status == "OK": health_status = "INCONSISTENT"
+                elif num_available_sources == 2:
+                    inconsistent_blocks.append(f"LBA {lba} (RAID-60 Subarray: DEGRADED - 1 source missing for this LBA. Rebuildable.)")
+                    if health_status == "OK": health_status = "INCONSISTENT"
 
 
         if inconsistent_blocks:
@@ -1861,7 +2026,7 @@ class RAIDArray:
                 print(f"- \033[91m{block_info}\033[0m")
             print("\033[93mREBUILD RECOMMENDED to restore consistency if degraded, or CRITICAL data loss suspected.\033[0m")
         else:
-            print("All mapped logical blocks appear to be present on active drives.")
+            print("All mapped logical blocks appear to be present on active drives and consistent.")
 
         print(f"\nOVERALL HEALTH: \033[1m{health_status}\033[0m")
         print(f"{'='*60}")
@@ -1882,6 +2047,7 @@ class RAIDArray:
         print(f"Failed Drives: {sum(1 for d in self.drives if not d.is_active)}")
         print(f"Current Logical Block Index: {self.current_logical_block_index}")
         print(f"Rebuild Active: {'Yes' if self.rebuild_active else 'No'}")
+        print(f"Rebalance Active: {'Yes' if self.rebalance_active else 'No'}") # New status
         print()
 
         for drive in self.drives:
@@ -1890,7 +2056,7 @@ class RAIDArray:
             status_display = status
             if "failed" in status:
                 status_display = f"\033[91m{status}\033[0m"
-            elif "rebuilding" in status or "syncing" in status or "re_adding" in status:
+            elif "rebuilding" in status or "syncing" in status or "re_adding" in status or "rebalancing" in status: # Added rebalancing
                 status_display = f"\033[93m{status}\033[0m"
             else:
                 status_display = f"\033[92m{status}\033[0m"
@@ -1919,11 +2085,19 @@ class RAIDArray:
         to ensure a clean shutdown.
         """
         self.rebuild_active = False
+        self.rebalance_active = False # Ensure rebalance thread is also stopped
+
         if self.rebuild_thread and self.rebuild_thread.is_alive():
             logger.log("Waiting for rebuild thread to finish...", "INFO")
             self.rebuild_thread.join(timeout=2.0)
             if self.rebuild_thread.is_alive():
                 logger.log("Rebuild thread did not terminate gracefully.", "WARN")
+        
+        if self.rebalance_thread and self.rebalance_thread.is_alive():
+            logger.log("Waiting for rebalance thread to finish...", "INFO")
+            self.rebalance_thread.join(timeout=2.0)
+            if self.rebalance_thread.is_alive():
+                logger.log("Rebalance thread did not terminate gracefully.", "WARN")
 
 
 # ---------------------------------------------------------------------
@@ -1954,7 +2128,11 @@ def interactive_mode(raid: RAIDArray):
         if choice == "1":
             data = input("Enter data to write: ")
             if data:
-                raid.write_data(data)
+                # Prevent writing during active rebuild/rebalance
+                if raid.rebuild_active or raid.rebalance_active:
+                    print("\033[93mWARNING: RAID operation (rebuild/rebalance) in progress. Cannot write data now. Please wait.\033[0m")
+                else:
+                    raid.write_data(data)
                 print("Press Enter to continue...")
                 input()
 
@@ -1976,6 +2154,14 @@ def interactive_mode(raid: RAIDArray):
                 print("Press Enter to continue...")
                 input()
                 continue
+            
+            # Prevent adding drives during active rebuild/rebalance (to avoid race conditions/complexity)
+            if raid.rebuild_active or raid.rebalance_active:
+                print("\033[93mWARNING: RAID operation (rebuild/rebalance) in progress. Cannot add drives now. Please wait.\033[0m")
+                print("Press Enter to continue...")
+                input()
+                continue
+
 
             print("\nAdd Drive Options:")
             print("a. Add a brand NEW, empty drive")
@@ -1985,39 +2171,35 @@ def interactive_mode(raid: RAIDArray):
             if add_choice == 'a':
                 new_drive_id = raid.add_drive(initial_setup=False)
                 if new_drive_id is not None:
-                    print(
-                        f"Added new drive {new_drive_id}. For RAID-0/5/6, future writes will distribute to it. "
-                        "For RAID-1, it will be automatically synced. "
-                        "For a full rebalance (0/5/6), a manual rebuild/data migration would typically be needed "
-                        "which is beyond this demo's scope for dynamic addition."
-                    )
+                    # Specific messages are now handled by add_drive itself.
+                    pass 
             elif add_choice == 'b':
                 try:
                     drive_id_to_readd = int(input("Enter the ID of the existing drive you want to re-add: "))
-                    # Check if a drive with this ID already exists but is marked failed
                     existing_drive_match = next((d for d in raid.drives if d.drive_id == drive_id_to_readd), None)
 
-                    if existing_drive_match and not existing_drive_match.is_active:
-                        print(f"Attempting to re-add drive {drive_id_to_readd} with its existing signature ({existing_drive_match.signature}).")
-                        # This simulates the user physically re-inserting the same drive.
-                        # We would then typically initiate a rebuild/resync if needed.
-                        if raid.raid_level == 0:
-                            print("\033[91mRAID-0: Re-adding a failed drive will not recover lost data. Data blocks associated with this drive for previously written LBAs remain lost.\033[0m")
-                            existing_drive_match.is_active = True
-                            existing_drive_match.metadata["status"] = "active"
-                            existing_drive_match._update_file()
-                            raid._save_config()
-                            logger.log(f"RAID-0 Drive {drive_id_to_readd} re-activated (data not recovered).", "INFO")
-                        else: # For redundant RAID levels, attempt to resync
-                            existing_drive_match.is_active = True
-                            existing_drive_match.metadata["status"] = "re_adding" # Temporary status
-                            existing_drive_match._update_file()
-                            raid._save_config()
-                            raid.start_rebuild(failed_logical_drive_position=drive_id_to_readd, replacement_drive_id=drive_id_to_readd)
-                    elif existing_drive_match and existing_drive_match.is_active:
-                        print(f"\033[93mDrive {drive_id_to_readd} is already active. No need to re-add.\033[0m")
+                    if existing_drive_match:
+                        if existing_drive_match.is_active:
+                            print(f"\033[93mWARNING: Drive {drive_id_to_readd} is currently active. To re-add it after a failure, you must first simulate its failure using option 2.\033[0m")
+                        elif existing_drive_match.metadata.get("status") in ["failed", "failed_file_missing", "failed_signature_mismatch"]:
+                            print(f"Attempting to re-add failed drive {drive_id_to_readd} with its existing signature ({existing_drive_match.signature}).")
+                            if raid.raid_level == 0:
+                                print("\033[91mRAID-0: Re-activating a failed drive will NOT recover lost data for previous LBAs. It will only be used for future writes.\033[0m")
+                                existing_drive_match.is_active = True
+                                existing_drive_match.metadata["status"] = "active"
+                                existing_drive_match._update_file()
+                                raid._save_config()
+                                logger.log(f"RAID-0 Drive {drive_id_to_readd} re-activated (data not recovered).", "INFO")
+                            else:
+                                existing_drive_match.is_active = True
+                                existing_drive_match.metadata["status"] = "re_adding"
+                                existing_drive_match._update_file()
+                                raid._save_config()
+                                raid.start_rebuild(failed_logical_drive_position=drive_id_to_readd, replacement_drive_id=drive_id_to_readd)
+                        else:
+                            print(f"\033[93mDrive {drive_id_to_readd} is in an unexpected inactive state ({existing_drive_match.metadata.get('status')}). Cannot re-add.\033[0m")
                     else:
-                        print(f"\033[91mDrive {drive_id_to_readd} not found or doesn't exist in a failed state.\033[0m")
+                        print(f"\033[91mDrive ID {drive_id_to_readd} not found in the array's configuration. Please check the ID.\033[0m")
                 except ValueError:
                     print("\033[91mInvalid drive ID (must be a number).\033[0m")
             else:
