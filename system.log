@@ -1,0 +1,43 @@
+[2025-09-09 20:06:02] INFO: RAID Teaching Tool started
+[2025-09-09 20:06:12] INFO: Initializing RAID-0 (Striping)
+[2025-09-09 20:06:12] INFO: Added drive 0 to RAID-0
+[2025-09-09 20:06:12] INFO: Added drive 1 to RAID-0
+[2025-09-09 20:06:12] INFO: RAID-0 initialized with 2 drives
+[2025-09-09 20:06:36] INFO: Writing data: 'This is not a hello world statement' to RAID-0
+[2025-09-09 20:06:36] INFO: Drive 0: Written 'T' to sector 0 as DATA
+[2025-09-09 20:06:36] INFO: Drive 1: Written 'h' to sector 0 as DATA
+[2025-09-09 20:06:36] INFO: Drive 0: Written 'i' to sector 0 as DATA
+[2025-09-09 20:06:36] INFO: Drive 1: Written 's' to sector 0 as DATA
+[2025-09-09 20:06:36] INFO: Drive 0: Written ' ' to sector 0 as DATA
+[2025-09-09 20:06:37] INFO: Drive 1: Written 'i' to sector 0 as DATA
+[2025-09-09 20:06:37] INFO: Drive 0: Written 's' to sector 0 as DATA
+[2025-09-09 20:06:37] INFO: Drive 1: Written ' ' to sector 0 as DATA
+[2025-09-09 20:06:37] INFO: Drive 0: Written 'n' to sector 0 as DATA
+[2025-09-09 20:06:37] INFO: Drive 1: Written 'o' to sector 0 as DATA
+[2025-09-09 20:06:38] INFO: Drive 0: Written 't' to sector 0 as DATA
+[2025-09-09 20:06:38] INFO: Drive 1: Written ' ' to sector 0 as DATA
+[2025-09-09 20:06:38] INFO: Drive 0: Written 'a' to sector 0 as DATA
+[2025-09-09 20:06:38] INFO: Drive 1: Written ' ' to sector 0 as DATA
+[2025-09-09 20:06:38] INFO: Drive 0: Written 'h' to sector 0 as DATA
+[2025-09-09 20:06:39] INFO: Drive 1: Written 'e' to sector 0 as DATA
+[2025-09-09 20:06:39] INFO: Drive 0: Written 'l' to sector 0 as DATA
+[2025-09-09 20:06:39] INFO: Drive 1: Written 'l' to sector 0 as DATA
+[2025-09-09 20:06:39] INFO: Drive 0: Written 'o' to sector 0 as DATA
+[2025-09-09 20:06:39] INFO: Drive 1: Written ' ' to sector 0 as DATA
+[2025-09-09 20:06:40] INFO: Drive 0: Written 'w' to sector 0 as DATA
+[2025-09-09 20:06:40] INFO: Drive 1: Written 'o' to sector 0 as DATA
+[2025-09-09 20:06:40] INFO: Drive 0: Written 'r' to sector 0 as DATA
+[2025-09-09 20:06:40] INFO: Drive 1: Written 'l' to sector 0 as DATA
+[2025-09-09 20:06:41] INFO: Drive 0: Written 'd' to sector 0 as DATA
+[2025-09-09 20:06:41] INFO: Drive 1: Written ' ' to sector 0 as DATA
+[2025-09-09 20:06:41] INFO: Drive 0: Written 's' to sector 0 as DATA
+[2025-09-09 20:06:41] INFO: Drive 1: Written 't' to sector 0 as DATA
+[2025-09-09 20:06:41] INFO: Drive 0: Written 'a' to sector 0 as DATA
+[2025-09-09 20:06:42] INFO: Drive 1: Written 't' to sector 0 as DATA
+[2025-09-09 20:06:42] INFO: Drive 0: Written 'e' to sector 0 as DATA
+[2025-09-09 20:06:42] INFO: Drive 1: Written 'm' to sector 0 as DATA
+[2025-09-09 20:06:42] INFO: Drive 0: Written 'e' to sector 0 as DATA
+[2025-09-09 20:06:42] INFO: Drive 1: Written 'n' to sector 0 as DATA
+[2025-09-09 20:06:43] INFO: Drive 0: Written 't' to sector 0 as DATA
+[2025-09-09 20:06:43] INFO: RAID-0 write operation completed
+[2025-09-09 20:08:41] INFO: RAID Teaching Tool shutting down

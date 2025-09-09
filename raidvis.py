@@ -128,6 +128,235 @@ class Drive:
 
 # TODO: Implement RAID levels 0, 1, and 5 with their specific logic
 
+class RAIDArray:
+    """Main RAID array implementation"""
+    
+    def __init__(self, raid_level: int):
+        self.raid_level = raid_level
+        self.drives = []
+        self.folder_path = f"raid_{raid_level}"
+        self.rebuild_active = False
+        self.rebuild_thread = None
+        self.current_sector = 0
+        
+        # RAID configuration
+        self.raid_configs = {
+            0: {"min_drives": 2, "name": "RAID-0 (Striping)", "fault_tolerance": 0},
+            1: {"min_drives": 2, "name": "RAID-1 (Mirroring)", "fault_tolerance": 1},
+            5: {"min_drives": 3, "name": "RAID-5 (Striping with Parity)", "fault_tolerance": 1}
+        }
+        
+        self.initialize_raid()
+    
+    def initialize_raid(self):
+        """Initialize the RAID array"""
+        logger.log(f"Initializing {self.raid_configs[self.raid_level]['name']}")
+        
+        # Create folder structure
+        if os.path.exists(self.folder_path):
+            shutil.rmtree(self.folder_path)
+        os.makedirs(self.folder_path)
+        
+        # Create minimum required drives
+        min_drives = self.raid_configs[self.raid_level]['min_drives']
+        for i in range(min_drives):
+            self.add_drive()
+        
+        logger.log(f"RAID-{self.raid_level} initialized with {len(self.drives)} drives")
+    
+    def add_drive(self):
+        """Add a new drive to the RAID array"""
+        drive_id = len(self.drives)
+        new_drive = Drive(drive_id, self.folder_path)
+        self.drives.append(new_drive)
+        logger.log(f"Added drive {drive_id} to RAID-{self.raid_level}")
+        return drive_id
+    
+    def remove_drive(self, drive_id: int):
+        """Remove a drive from the RAID array (simulate failure)"""
+        if drive_id < len(self.drives) and self.drives[drive_id].is_active:
+            self.drives[drive_id].mark_failed()
+            
+            # Check if RAID is still functional
+            active_drives = sum(1 for d in self.drives if d.is_active)
+            fault_tolerance = self.raid_configs[self.raid_level]['fault_tolerance']
+            
+            if active_drives < (len(self.drives) - fault_tolerance):
+                logger.log("RAID FAILURE: Not enough drives to maintain data integrity!", "ERROR")
+            else:
+                logger.log(f"RAID-{self.raid_level} operating in degraded mode", "WARN")
+                
+                # Ask if user wants to add a replacement
+                print(f"\nRAID is operating in degraded mode.")
+                print("Would you like to add a replacement drive and start rebuild? (y/n): ", end="")
+                choice = input().lower()
+                if choice == 'y':
+                    replacement_id = self.add_drive()
+                    self.start_rebuild(drive_id, replacement_id)
+        else:
+            logger.log(f"Cannot remove drive {drive_id}: drive not found or already inactive", "ERROR")
+    
+    def write_data(self, data: str):
+        """Write data to the RAID array based on RAID level"""
+        logger.log(f"Writing data: '{data}' to RAID-{self.raid_level}")
+        
+        if self.raid_level == 0:
+            self._write_raid0(data)
+        elif self.raid_level == 1:
+            self._write_raid1(data)
+        elif self.raid_level == 5:
+            self._write_raid5(data)
+    
+    def _write_raid0(self, data: str):
+        """RAID-0 striping implementation"""
+        active_drives = [d for d in self.drives if d.is_active]
+        if not active_drives:
+            logger.log("No active drives available", "ERROR")
+            return
+        
+        # Split data into blocks and stripe across drives
+        for i, char in enumerate(data):
+            drive_index = i % len(active_drives)
+            active_drives[drive_index].write_sector(self.current_sector, char, "DATA")
+            time.sleep(0.2)  # Slow down for demonstration
+        
+        self.current_sector += 1
+        logger.log("RAID-0 write operation completed")
+    
+    def _write_raid1(self, data: str):
+        """RAID-1 mirroring implementation"""
+        active_drives = [d for d in self.drives if d.is_active]
+        if not active_drives:
+            logger.log("No active drives available", "ERROR")
+            return
+        
+        # Write same data to all drives
+        for char in data:
+            for drive in active_drives:
+                drive.write_sector(self.current_sector, char, "DATA")
+                time.sleep(0.1)  # Slow down for demonstration
+        
+        self.current_sector += 1
+        logger.log("RAID-1 write operation completed")
+    
+    def _write_raid5(self, data: str):
+        """RAID-5 striping with parity implementation"""
+        active_drives = [d for d in self.drives if d.is_active]
+        if len(active_drives) < 3:
+            logger.log("RAID-5 requires at least 3 active drives", "ERROR")
+            return
+        
+        # Calculate parity drive position (rotating)
+        parity_drive_index = self.current_sector % len(active_drives)
+        
+        # Write data blocks to non-parity drives
+        data_drives = [i for i in range(len(active_drives)) if i != parity_drive_index]
+        parity_data = ""
+        
+        for i, char in enumerate(data):
+            if i < len(data_drives):
+                drive_index = data_drives[i]
+                active_drives[drive_index].write_sector(self.current_sector, char, "DATA")
+                parity_data += char
+                time.sleep(0.2)
+        
+        # Calculate and write parity
+        time.sleep(0.5)  # Simulate parity calculation time
+        parity_char = self._calculate_parity(parity_data)
+        active_drives[parity_drive_index].write_sector(self.current_sector, parity_char, "PARITY")
+        
+        logger.log(f"Parity calculated and stored on drive {active_drives[parity_drive_index].drive_id}")
+        self.current_sector += 1
+        logger.log("RAID-5 write operation completed")
+    
+    def _calculate_parity(self, data: str) -> str:
+        """Simple XOR parity calculation for demonstration"""
+        parity = 0
+        for char in data:
+            parity ^= ord(char)
+        return chr(parity % 256)  # Keep it printable
+    
+    def start_rebuild(self, failed_drive_id: int, replacement_drive_id: int):
+        """Start the rebuild process in a separate thread"""
+        if not self.rebuild_active:
+            self.rebuild_active = True
+            self.rebuild_thread = threading.Thread(
+                target=self._rebuild_worker,
+                args=(failed_drive_id, replacement_drive_id),
+                daemon=True
+            )
+            self.rebuild_thread.start()
+            logger.log(f"Started rebuild: Drive {failed_drive_id} -> Drive {replacement_drive_id}")
+    
+    def _rebuild_worker(self, failed_drive_id: int, replacement_drive_id: int):
+        """Rebuild worker thread"""
+        try:
+            failed_drive = self.drives[failed_drive_id]
+            replacement_drive = self.drives[replacement_drive_id]
+            
+            logger.log("REBUILD: Starting drive rebuild process")
+            
+            # Simulate rebuild for each sector that was written
+            for sector in range(self.current_sector):
+                if not self.rebuild_active:
+                    break
+                
+                # Simulate rebuild delay
+                time.sleep(1.0)
+                
+                if self.raid_level == 1:
+                    # RAID-1: Copy from mirror
+                    for drive in self.drives:
+                        if drive.is_active and drive.drive_id != failed_drive_id:
+                            if sector in drive.sectors:
+                                data = drive.sectors[sector]["data"]
+                                replacement_drive.write_sector(sector, data, "REBUILT")
+                                break
+                
+                elif self.raid_level == 5:
+                    # RAID-5: Reconstruct from remaining drives using parity
+                    active_drives = [d for d in self.drives if d.is_active and d.drive_id != failed_drive_id]
+                    if len(active_drives) >= 2:
+                        # Simple reconstruction for demonstration
+                        data = "R"  # Reconstructed data placeholder
+                        replacement_drive.write_sector(sector, data, "REBUILT")
+                
+                progress = ((sector + 1) / self.current_sector) * 100
+                logger.log(f"REBUILD: Progress {progress:.1f}% - Sector {sector}")
+            
+            logger.log("REBUILD: Drive rebuild completed successfully")
+            
+        except Exception as e:
+            logger.log(f"REBUILD: Error during rebuild - {e}", "ERROR")
+        
+        finally:
+            self.rebuild_active = False
+    
+    def display_status(self):
+        """Display current RAID status"""
+        print(f"\n{'='*60}")
+        print(f"RAID-{self.raid_level} STATUS")
+        print(f"{'='*60}")
+        print(f"Configuration: {self.raid_configs[self.raid_level]['name']}")
+        print(f"Total Drives: {len(self.drives)}")
+        print(f"Active Drives: {sum(1 for d in self.drives if d.is_active)}")
+        print(f"Failed Drives: {sum(1 for d in self.drives if not d.is_active)}")
+        print(f"Current Sector: {self.current_sector}")
+        print(f"Rebuild Active: {'Yes' if self.rebuild_active else 'No'}")
+        print()
+        
+        for drive in self.drives:
+            status = "ACTIVE" if drive.is_active else "FAILED"
+            print(f"Drive {drive.drive_id}: {status} - {len(drive.sectors)} sectors used")
+        
+        print(f"{'='*60}")
+    
+    def cleanup(self):
+        """Cleanup resources"""
+        self.rebuild_active = False
+        if self.rebuild_thread and self.rebuild_thread.is_alive():
+            self.rebuild_thread.join(timeout=2.0)
+            
 # ---------------------------------------------------------------------
 # Interactive mode implementation
 # ---------------------------------------------------------------------
@@ -240,6 +469,6 @@ def main():
         logging_active = False
         logger.log("RAID Teaching Tool shutting down")
         time.sleep(0.5)  
-        
+
 if __name__ == "__main__":
     main()
