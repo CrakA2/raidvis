@@ -124,9 +124,9 @@ class Drive:
                 f.write("+--------+--------+--------+--------+\n")
         except Exception as e:
             logger.log(f"Error updating drive file {self.file_path}: {e}", "ERROR")
-
-
+            
 # TODO: Implement RAID levels 0, 1, and 5 with their specific logic
+# Task completed 
 
 class RAIDArray:
     """Main RAID array implementation"""
@@ -347,7 +347,8 @@ class RAIDArray:
         
         for drive in self.drives:
             status = "ACTIVE" if drive.is_active else "FAILED"
-            print(f"Drive {drive.drive_id}: {status} - {len(drive.sectors)} sectors used")
+            total_blocks = drive.metadata.get('total_blocks', 0)
+            print(f"Drive {drive.drive_id}: {status} - {len(drive.sectors)} sectors, {total_blocks} total blocks")
         
         print(f"{'='*60}")
     
@@ -356,7 +357,7 @@ class RAIDArray:
         self.rebuild_active = False
         if self.rebuild_thread and self.rebuild_thread.is_alive():
             self.rebuild_thread.join(timeout=2.0)
-            
+
 # ---------------------------------------------------------------------
 # Interactive mode implementation
 # ---------------------------------------------------------------------
