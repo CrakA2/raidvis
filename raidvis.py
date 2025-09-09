@@ -32,7 +32,9 @@ class Logger:
                     f.flush()
                 except queue.Empty:
                     continue
-
+# ---------------------------------------------------------------------
+# RAID Array and Drive Classes
+# ---------------------------------------------------------------------
 class Drive:
     """Represents a single drive in the RAID array"""
     
@@ -122,3 +124,122 @@ class Drive:
                 f.write("+--------+--------+--------+--------+\n")
         except Exception as e:
             logger.log(f"Error updating drive file {self.file_path}: {e}", "ERROR")
+
+
+# TODO: Implement RAID levels 0, 1, and 5 with their specific logic
+
+# ---------------------------------------------------------------------
+# Interactive mode implementation
+# ---------------------------------------------------------------------
+
+
+def interactive_mode(raid: RAIDArray):
+    """Interactive mode for RAID demonstration"""
+    while True:
+        print(f"\n{'='*50}")
+        print(f"RAID-{raid.raid_level} Interactive Demo")
+        print(f"{'='*50}")
+        print("Options:")
+        print("1. Write data to RAID")
+        print("2. Remove drive (simulate failure)")
+        print("3. Add drive to RAID")
+        print("4. Edit/overwrite current data")
+        print("5. View RAID status and drive contents")
+        print("6. Exit RAID demo")
+        print()
+        
+        choice = input("Enter your choice (1-6): ").strip()
+        
+        if choice == '1':
+            data = input("Enter data to write: ")
+            if data:
+                raid.write_data(data)
+                print("Press Enter to continue...")
+                input()
+        
+        elif choice == '2':
+            raid.display_status()
+            try:
+                drive_id = int(input("Enter drive ID to remove: "))
+                raid.remove_drive(drive_id)
+            except ValueError:
+                print("Invalid drive ID")
+            print("Press Enter to continue...")
+            input()
+        
+        elif choice == '3':
+            drive_id = raid.add_drive()
+            print(f"Added drive {drive_id}")
+            print("Press Enter to continue...")
+            input()
+        
+        elif choice == '4':
+            data = input("Enter new data to write: ")
+            if data:
+                raid.write_data(data)
+                print("Press Enter to continue...")
+                input()
+        
+        elif choice == '5':
+            raid.display_status()
+            print("\nDrive files created in folder:", raid.folder_path)
+            print("You can view the disk_X files to see detailed block layouts")
+            print("Press Enter to continue...")
+            input()
+        
+        elif choice == '6':
+            break
+        
+        else:
+            print("Invalid choice. Please try again.")
+
+# ---------------------------------------------------------------------
+# Main execution
+# ---------------------------------------------------------------------
+
+def main():
+    """Main program entry point"""
+    global logging_active
+    
+    # Initialize logger
+    global logger
+    logger = Logger()
+    
+    print("RAID Visualization Teaching Tool")
+    print("=" * 40)
+    logger.log("RAID Teaching Tool started")
+    
+    try:
+        while True:
+            print("\nAvailable RAID Levels:")
+            print("0 - RAID-0 (Striping)")
+            print("1 - RAID-1 (Mirroring)")
+            print("5 - RAID-5 (Striping with Parity)")
+            print("q - Quit")
+            
+            choice = input("\nSelect RAID level for demonstration: ").strip().lower()
+            
+            if choice == 'q':
+                break
+            
+            try:
+                raid_level = int(choice)
+                if raid_level in [0, 1, 5]:
+                    raid = RAIDArray(raid_level)
+                    interactive_mode(raid)
+                    raid.cleanup()
+                else:
+                    print("Invalid RAID level. Please choose 0, 1, or 5.")
+            except ValueError:
+                print("Invalid input. Please enter a number or 'q' to quit.")
+    
+    except KeyboardInterrupt:
+        print("\n\nShutting down...")
+    
+    finally: # Delay is here if you are wondering
+        logging_active = False
+        logger.log("RAID Teaching Tool shutting down")
+        time.sleep(0.5)  
+        
+if __name__ == "__main__":
+    main()
