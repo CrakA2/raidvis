@@ -1,212 +1,107 @@
-[2025-09-09 20:06:02] INFO: RAID Teaching Tool started
-[2025-09-09 20:06:12] INFO: Initializing RAID-0 (Striping)
-[2025-09-09 20:06:12] INFO: Added drive 0 to RAID-0
-[2025-09-09 20:06:12] INFO: Added drive 1 to RAID-0
-[2025-09-09 20:06:12] INFO: RAID-0 initialized with 2 drives
-[2025-09-09 20:06:36] INFO: Writing data: 'This is not a hello world statement' to RAID-0
-[2025-09-09 20:06:36] INFO: Drive 0: Written 'T' to sector 0 as DATA
-[2025-09-09 20:06:36] INFO: Drive 1: Written 'h' to sector 0 as DATA
-[2025-09-09 20:06:36] INFO: Drive 0: Written 'i' to sector 0 as DATA
-[2025-09-09 20:06:36] INFO: Drive 1: Written 's' to sector 0 as DATA
-[2025-09-09 20:06:36] INFO: Drive 0: Written ' ' to sector 0 as DATA
-[2025-09-09 20:06:37] INFO: Drive 1: Written 'i' to sector 0 as DATA
-[2025-09-09 20:06:37] INFO: Drive 0: Written 's' to sector 0 as DATA
-[2025-09-09 20:06:37] INFO: Drive 1: Written ' ' to sector 0 as DATA
-[2025-09-09 20:06:37] INFO: Drive 0: Written 'n' to sector 0 as DATA
-[2025-09-09 20:06:37] INFO: Drive 1: Written 'o' to sector 0 as DATA
-[2025-09-09 20:06:38] INFO: Drive 0: Written 't' to sector 0 as DATA
-[2025-09-09 20:06:38] INFO: Drive 1: Written ' ' to sector 0 as DATA
-[2025-09-09 20:06:38] INFO: Drive 0: Written 'a' to sector 0 as DATA
-[2025-09-09 20:06:38] INFO: Drive 1: Written ' ' to sector 0 as DATA
-[2025-09-09 20:06:38] INFO: Drive 0: Written 'h' to sector 0 as DATA
-[2025-09-09 20:06:39] INFO: Drive 1: Written 'e' to sector 0 as DATA
-[2025-09-09 20:06:39] INFO: Drive 0: Written 'l' to sector 0 as DATA
-[2025-09-09 20:06:39] INFO: Drive 1: Written 'l' to sector 0 as DATA
-[2025-09-09 20:06:39] INFO: Drive 0: Written 'o' to sector 0 as DATA
-[2025-09-09 20:06:39] INFO: Drive 1: Written ' ' to sector 0 as DATA
-[2025-09-09 20:06:40] INFO: Drive 0: Written 'w' to sector 0 as DATA
-[2025-09-09 20:06:40] INFO: Drive 1: Written 'o' to sector 0 as DATA
-[2025-09-09 20:06:40] INFO: Drive 0: Written 'r' to sector 0 as DATA
-[2025-09-09 20:06:40] INFO: Drive 1: Written 'l' to sector 0 as DATA
-[2025-09-09 20:06:41] INFO: Drive 0: Written 'd' to sector 0 as DATA
-[2025-09-09 20:06:41] INFO: Drive 1: Written ' ' to sector 0 as DATA
-[2025-09-09 20:06:41] INFO: Drive 0: Written 's' to sector 0 as DATA
-[2025-09-09 20:06:41] INFO: Drive 1: Written 't' to sector 0 as DATA
-[2025-09-09 20:06:41] INFO: Drive 0: Written 'a' to sector 0 as DATA
-[2025-09-09 20:06:42] INFO: Drive 1: Written 't' to sector 0 as DATA
-[2025-09-09 20:06:42] INFO: Drive 0: Written 'e' to sector 0 as DATA
-[2025-09-09 20:06:42] INFO: Drive 1: Written 'm' to sector 0 as DATA
-[2025-09-09 20:06:42] INFO: Drive 0: Written 'e' to sector 0 as DATA
-[2025-09-09 20:06:42] INFO: Drive 1: Written 'n' to sector 0 as DATA
-[2025-09-09 20:06:43] INFO: Drive 0: Written 't' to sector 0 as DATA
-[2025-09-09 20:06:43] INFO: RAID-0 write operation completed
-[2025-09-09 20:08:41] INFO: RAID Teaching Tool shutting down
-[2025-09-09 20:11:57] INFO: RAID Teaching Tool started
-[2025-09-09 20:12:00] INFO: Initializing RAID-0 (Striping)
-[2025-09-09 20:12:00] INFO: Added drive 0 to RAID-0
-[2025-09-09 20:12:00] INFO: Added drive 1 to RAID-0
-[2025-09-09 20:12:00] INFO: RAID-0 initialized with 2 drives
-[2025-09-09 20:12:10] INFO: Writing data: 'This is not a hello world statement' to RAID-0
-[2025-09-09 20:12:10] INFO: Drive 0: Written 'T' to sector 0 as DATA
-[2025-09-09 20:12:10] INFO: Drive 1: Written 'h' to sector 0 as DATA
-[2025-09-09 20:12:10] INFO: Drive 0: Written 'i' to sector 0 as DATA
-[2025-09-09 20:12:11] INFO: Drive 1: Written 's' to sector 0 as DATA
-[2025-09-09 20:12:11] INFO: Drive 0: Written ' ' to sector 0 as DATA
-[2025-09-09 20:12:11] INFO: Drive 1: Written 'i' to sector 0 as DATA
-[2025-09-09 20:12:11] INFO: Drive 0: Written 's' to sector 0 as DATA
-[2025-09-09 20:12:12] INFO: Drive 1: Written ' ' to sector 0 as DATA
-[2025-09-09 20:12:12] INFO: Drive 0: Written 'n' to sector 0 as DATA
-[2025-09-09 20:12:12] INFO: Drive 1: Written 'o' to sector 0 as DATA
-[2025-09-09 20:12:12] INFO: Drive 0: Written 't' to sector 0 as DATA
-[2025-09-09 20:12:12] INFO: Drive 1: Written ' ' to sector 0 as DATA
-[2025-09-09 20:12:13] INFO: Drive 0: Written 'a' to sector 0 as DATA
-[2025-09-09 20:12:13] INFO: Drive 1: Written ' ' to sector 0 as DATA
-[2025-09-09 20:12:13] INFO: Drive 0: Written 'h' to sector 0 as DATA
-[2025-09-09 20:12:13] INFO: Drive 1: Written 'e' to sector 0 as DATA
-[2025-09-09 20:12:13] INFO: Drive 0: Written 'l' to sector 0 as DATA
-[2025-09-09 20:12:14] INFO: Drive 1: Written 'l' to sector 0 as DATA
-[2025-09-09 20:12:14] INFO: Drive 0: Written 'o' to sector 0 as DATA
-[2025-09-09 20:12:14] INFO: Drive 1: Written ' ' to sector 0 as DATA
-[2025-09-09 20:12:14] INFO: Drive 0: Written 'w' to sector 0 as DATA
-[2025-09-09 20:12:14] INFO: Drive 1: Written 'o' to sector 0 as DATA
-[2025-09-09 20:12:15] INFO: Drive 0: Written 'r' to sector 0 as DATA
-[2025-09-09 20:12:15] INFO: Drive 1: Written 'l' to sector 0 as DATA
-[2025-09-09 20:12:15] INFO: Drive 0: Written 'd' to sector 0 as DATA
-[2025-09-09 20:12:15] INFO: Drive 1: Written ' ' to sector 0 as DATA
-[2025-09-09 20:12:15] INFO: Drive 0: Written 's' to sector 0 as DATA
-[2025-09-09 20:12:16] INFO: Drive 1: Written 't' to sector 0 as DATA
-[2025-09-09 20:12:16] INFO: Drive 0: Written 'a' to sector 0 as DATA
-[2025-09-09 20:12:16] INFO: Drive 1: Written 't' to sector 0 as DATA
-[2025-09-09 20:12:16] INFO: Drive 0: Written 'e' to sector 0 as DATA
-[2025-09-09 20:12:16] INFO: Drive 1: Written 'm' to sector 0 as DATA
-[2025-09-09 20:12:17] INFO: Drive 0: Written 'e' to sector 0 as DATA
-[2025-09-09 20:12:17] INFO: Drive 1: Written 'n' to sector 0 as DATA
-[2025-09-09 20:12:17] INFO: Drive 0: Written 't' to sector 0 as DATA
-[2025-09-09 20:12:17] INFO: RAID-0 write operation completed
-[2025-09-09 20:16:50] INFO: RAID Teaching Tool shutting down
-[2025-09-09 20:16:52] INFO: RAID Teaching Tool started
-[2025-09-09 20:16:55] INFO: Initializing RAID-0 (Striping)
-[2025-09-09 20:16:55] INFO: Added drive 0 to RAID-0
-[2025-09-09 20:16:55] INFO: Added drive 1 to RAID-0
-[2025-09-09 20:16:55] INFO: RAID-0 initialized with 2 drives
-[2025-09-09 20:17:21] INFO: Writing data: 'This is not a hello world' to RAID-0
-[2025-09-09 20:17:21] INFO: Drive 0: Written 'T' to sector 0 as DATA
-[2025-09-09 20:17:21] INFO: Drive 1: Written 'h' to sector 0 as DATA
-[2025-09-09 20:17:22] INFO: Drive 0: Written 'i' to sector 0 as DATA
-[2025-09-09 20:17:22] INFO: Drive 1: Written 's' to sector 0 as DATA
-[2025-09-09 20:17:22] INFO: Drive 0: Written ' ' to sector 0 as DATA
-[2025-09-09 20:17:22] INFO: Drive 1: Written 'i' to sector 0 as DATA
-[2025-09-09 20:17:23] INFO: Drive 0: Written 's' to sector 0 as DATA
-[2025-09-09 20:17:23] INFO: Drive 1: Written ' ' to sector 0 as DATA
-[2025-09-09 20:17:23] INFO: Drive 0: Written 'n' to sector 0 as DATA
-[2025-09-09 20:17:23] INFO: Drive 1: Written 'o' to sector 0 as DATA
-[2025-09-09 20:17:23] INFO: Drive 0: Written 't' to sector 0 as DATA
-[2025-09-09 20:17:24] INFO: Drive 1: Written ' ' to sector 0 as DATA
-[2025-09-09 20:17:24] INFO: Drive 0: Written 'a' to sector 0 as DATA
-[2025-09-09 20:17:24] INFO: Drive 1: Written ' ' to sector 0 as DATA
-[2025-09-09 20:17:24] INFO: Drive 0: Written 'h' to sector 0 as DATA
-[2025-09-09 20:17:24] INFO: Drive 1: Written 'e' to sector 0 as DATA
-[2025-09-09 20:17:25] INFO: Drive 0: Written 'l' to sector 0 as DATA
-[2025-09-09 20:17:25] INFO: Drive 1: Written 'l' to sector 0 as DATA
-[2025-09-09 20:17:25] INFO: Drive 0: Written 'o' to sector 0 as DATA
-[2025-09-09 20:17:25] INFO: Drive 1: Written ' ' to sector 0 as DATA
-[2025-09-09 20:17:25] INFO: Drive 0: Written 'w' to sector 0 as DATA
-[2025-09-09 20:17:26] INFO: Drive 1: Written 'o' to sector 0 as DATA
-[2025-09-09 20:17:26] INFO: Drive 0: Written 'r' to sector 0 as DATA
-[2025-09-09 20:17:26] INFO: Drive 1: Written 'l' to sector 0 as DATA
-[2025-09-09 20:17:26] INFO: Drive 0: Written 'd' to sector 0 as DATA
-[2025-09-09 20:17:26] INFO: RAID-0 write operation completed
-[2025-09-09 20:18:30] INFO: RAID Teaching Tool shutting down
-[2025-09-09 20:18:31] INFO: RAID Teaching Tool started
-[2025-09-09 20:18:34] INFO: Initializing RAID-0 (Striping)
-[2025-09-09 20:18:34] INFO: Added drive 0 to RAID-0
-[2025-09-09 20:18:34] INFO: Added drive 1 to RAID-0
-[2025-09-09 20:18:34] INFO: RAID-0 initialized with 2 drives
-[2025-09-09 20:18:46] INFO: Writing data: 'this is not a hello world' to RAID-0
-[2025-09-09 20:18:46] INFO: Drive 0: Written 't' to sector 0 as DATA
-[2025-09-09 20:18:46] INFO: Drive 1: Written 'h' to sector 0 as DATA
-[2025-09-09 20:18:47] INFO: Drive 0: Written 'i' to sector 0 as DATA
-[2025-09-09 20:18:47] INFO: Drive 1: Written 's' to sector 0 as DATA
-[2025-09-09 20:18:47] INFO: Drive 0: Written ' ' to sector 0 as DATA
-[2025-09-09 20:18:47] INFO: Drive 1: Written 'i' to sector 0 as DATA
-[2025-09-09 20:18:48] INFO: Drive 0: Written 's' to sector 0 as DATA
-[2025-09-09 20:18:48] INFO: Drive 1: Written ' ' to sector 0 as DATA
-[2025-09-09 20:18:48] INFO: Drive 0: Written 'n' to sector 0 as DATA
-[2025-09-09 20:18:48] INFO: Drive 1: Written 'o' to sector 0 as DATA
-[2025-09-09 20:18:48] INFO: Drive 0: Written 't' to sector 0 as DATA
-[2025-09-09 20:18:49] INFO: Drive 1: Written ' ' to sector 0 as DATA
-[2025-09-09 20:18:49] INFO: Drive 0: Written 'a' to sector 0 as DATA
-[2025-09-09 20:18:49] INFO: Drive 1: Written ' ' to sector 0 as DATA
-[2025-09-09 20:18:49] INFO: Drive 0: Written 'h' to sector 0 as DATA
-[2025-09-09 20:18:49] INFO: Drive 1: Written 'e' to sector 0 as DATA
-[2025-09-09 20:18:50] INFO: Drive 0: Written 'l' to sector 0 as DATA
-[2025-09-09 20:18:50] INFO: Drive 1: Written 'l' to sector 0 as DATA
-[2025-09-09 20:18:50] INFO: Drive 0: Written 'o' to sector 0 as DATA
-[2025-09-09 20:18:50] INFO: Drive 1: Written ' ' to sector 0 as DATA
-[2025-09-09 20:18:50] INFO: Drive 0: Written 'w' to sector 0 as DATA
-[2025-09-09 20:18:51] INFO: Drive 1: Written 'o' to sector 0 as DATA
-[2025-09-09 20:18:51] INFO: Drive 0: Written 'r' to sector 0 as DATA
-[2025-09-09 20:18:51] INFO: Drive 1: Written 'l' to sector 0 as DATA
-[2025-09-09 20:18:51] INFO: Drive 0: Written 'd' to sector 0 as DATA
-[2025-09-09 20:18:51] INFO: RAID-0 write operation completed
-[2025-09-09 20:23:19] INFO: RAID Teaching Tool shutting down
-[2025-09-09 20:23:22] INFO: RAID Teaching Tool started
-[2025-09-09 20:23:24] INFO: Initializing RAID-0 (Striping)
-[2025-09-09 20:23:24] INFO: Added drive 0 to RAID-0
-[2025-09-09 20:23:24] INFO: Added drive 1 to RAID-0
-[2025-09-09 20:23:24] INFO: RAID-0 initialized with 2 drives
-[2025-09-09 20:23:43] INFO: Writing data: 'Hello World' to RAID-0
-[2025-09-09 20:23:43] INFO: Drive 0: Written 'H' to sector 0 as DATA
-[2025-09-09 20:23:43] INFO: Drive 1: Written 'e' to sector 0 as DATA
-[2025-09-09 20:23:43] INFO: Drive 0: Written 'l' to sector 0 as DATA
-[2025-09-09 20:23:44] INFO: Drive 1: Written 'l' to sector 0 as DATA
-[2025-09-09 20:23:44] INFO: Drive 0: Written 'o' to sector 0 as DATA
-[2025-09-09 20:23:44] INFO: Drive 1: Written ' ' to sector 0 as DATA
-[2025-09-09 20:23:44] INFO: Drive 0: Written 'W' to sector 0 as DATA
-[2025-09-09 20:23:44] INFO: Drive 1: Written 'o' to sector 0 as DATA
-[2025-09-09 20:23:45] INFO: Drive 0: Written 'r' to sector 0 as DATA
-[2025-09-09 20:23:45] INFO: Drive 1: Written 'l' to sector 0 as DATA
-[2025-09-09 20:23:45] INFO: Drive 0: Written 'd' to sector 0 as DATA
-[2025-09-09 20:23:45] INFO: RAID-0 write operation completed
-[2025-09-09 20:24:36] INFO: Writing data: 'hi' to RAID-0
-[2025-09-09 20:24:36] ERROR: Error updating drive file raid_0/disk_0: [Errno 2] No such file or directory: 'raid_0/disk_0'
-[2025-09-09 20:24:36] INFO: Drive 0: Written 'h' to sector 1 as DATA
-[2025-09-09 20:24:36] ERROR: Error updating drive file raid_0/disk_1: [Errno 2] No such file or directory: 'raid_0/disk_1'
-[2025-09-09 20:24:36] INFO: Drive 1: Written 'i' to sector 1 as DATA
-[2025-09-09 20:24:36] INFO: RAID-0 write operation completed
-[2025-09-09 20:31:18] INFO: RAID Teaching Tool shutting down
-[2025-09-09 20:31:20] INFO: RAID Teaching Tool started
-[2025-09-09 20:31:22] INFO: Initializing RAID-0 (Striping)
-[2025-09-09 20:31:22] INFO: Added drive 0 to RAID-0
-[2025-09-09 20:31:22] INFO: Added drive 1 to RAID-0
-[2025-09-09 20:31:22] INFO: RAID-0 initialized with 2 drives
-[2025-09-09 20:31:37] INFO: Writing data: 'Hello world' to RAID-0
-[2025-09-09 20:31:37] INFO: Drive 0: Written 'H' to physical sector 0 as DATA
-[2025-09-09 20:31:38] INFO: Drive 1: Written 'e' to physical sector 0 as DATA
-[2025-09-09 20:31:38] INFO: Drive 0: Written 'l' to physical sector 1 as DATA
-[2025-09-09 20:31:38] INFO: Drive 1: Written 'l' to physical sector 1 as DATA
-[2025-09-09 20:31:38] INFO: Drive 0: Written 'o' to physical sector 2 as DATA
-[2025-09-09 20:31:38] INFO: Drive 1: Written ' ' to physical sector 2 as DATA
-[2025-09-09 20:31:39] INFO: Drive 0: Written 'w' to physical sector 3 as DATA
-[2025-09-09 20:31:39] INFO: Drive 1: Written 'o' to physical sector 3 as DATA
-[2025-09-09 20:31:39] INFO: Drive 0: Written 'r' to physical sector 4 as DATA
-[2025-09-09 20:31:39] INFO: Drive 1: Written 'l' to physical sector 4 as DATA
-[2025-09-09 20:31:39] INFO: Drive 0: Written 'd' to physical sector 5 as DATA
-[2025-09-09 20:31:40] INFO: RAID-0 write operation completed for logical block 0
-[2025-09-09 20:32:09] INFO: Added drive 2 to RAID-0
-[2025-09-09 20:32:21] INFO: Writing data: 'hi' to RAID-0
-[2025-09-09 20:32:21] INFO: Drive 0: Written 'h' to physical sector 6 as DATA
-[2025-09-09 20:32:21] INFO: Drive 1: Written 'i' to physical sector 5 as DATA
-[2025-09-09 20:32:21] INFO: RAID-0 write operation completed for logical block 1
-[2025-09-09 20:32:35] INFO: Writing data: 'hello mom' to RAID-0
-[2025-09-09 20:32:35] INFO: Drive 0: Written 'h' to physical sector 7 as DATA
-[2025-09-09 20:32:35] INFO: Drive 1: Written 'e' to physical sector 6 as DATA
-[2025-09-09 20:32:35] INFO: Drive 2: Written 'l' to physical sector 0 as DATA
-[2025-09-09 20:32:36] INFO: Drive 0: Written 'l' to physical sector 8 as DATA
-[2025-09-09 20:32:36] INFO: Drive 1: Written 'o' to physical sector 7 as DATA
-[2025-09-09 20:32:36] INFO: Drive 2: Written ' ' to physical sector 1 as DATA
-[2025-09-09 20:32:36] INFO: Drive 0: Written 'm' to physical sector 9 as DATA
-[2025-09-09 20:32:36] INFO: Drive 1: Written 'o' to physical sector 8 as DATA
-[2025-09-09 20:32:37] INFO: Drive 2: Written 'm' to physical sector 2 as DATA
-[2025-09-09 20:32:37] INFO: RAID-0 write operation completed for logical block 2
-[2025-09-09 20:33:09] INFO: RAID Teaching Tool shutting down
+[2025-09-09 20:57:09] INFO: RAID Teaching Tool shutting down
+[2025-09-09 20:57:16] INFO: RAID Teaching Tool started
+[2025-09-09 20:57:18] INFO: Initializing RAID-0 (Striping)
+[2025-09-09 20:57:18] INFO: RAID configuration saved to raid_0/raid_config.json
+[2025-09-09 20:57:18] INFO: Added drive 0 to RAID-0
+[2025-09-09 20:57:18] INFO: RAID configuration saved to raid_0/raid_config.json
+[2025-09-09 20:57:18] INFO: Added drive 1 to RAID-0
+[2025-09-09 20:57:18] INFO: RAID configuration saved to raid_0/raid_config.json
+[2025-09-09 20:57:18] INFO: RAID-0 initialized with 2 drives
+[2025-09-09 20:57:18] INFO: Initializing RAID-0 (Striping)
+[2025-09-09 20:57:18] INFO: Clearing existing RAID folder: raid_0
+[2025-09-09 20:57:18] INFO: RAID configuration saved to raid_0/raid_config.json
+[2025-09-09 20:57:18] INFO: Added drive 2 to RAID-0
+[2025-09-09 20:57:18] INFO: RAID configuration saved to raid_0/raid_config.json
+[2025-09-09 20:57:18] INFO: Added drive 3 to RAID-0
+[2025-09-09 20:57:18] INFO: RAID configuration saved to raid_0/raid_config.json
+[2025-09-09 20:57:18] INFO: RAID-0 initialized with 4 drives
+[2025-09-09 21:04:03] INFO: RAID Teaching Tool shutting down
+[2025-09-09 21:05:36] INFO: RAID Teaching Tool started
+[2025-09-09 21:05:38] INFO: Initializing RAID-0 (Striping) structure (clear_existing=True)
+[2025-09-09 21:05:38] INFO: RAID configuration saved to raid_0/raid_config.json
+[2025-09-09 21:05:38] INFO: Added drive 0 to RAID-0
+[2025-09-09 21:05:38] INFO: RAID configuration saved to raid_0/raid_config.json
+[2025-09-09 21:05:38] INFO: Added drive 1 to RAID-0
+[2025-09-09 21:05:38] INFO: RAID configuration saved to raid_0/raid_config.json
+[2025-09-09 21:05:38] INFO: RAID-0 initialized fresh with 2 drives
+[2025-09-09 21:06:06] INFO: Writing data: 'Hello World' to RAID-0
+[2025-09-09 21:06:06] INFO: Drive 0: Written 'H' to physical sector 0 (LBA: 0) as DATA
+[2025-09-09 21:06:06] INFO: Drive 1: Written 'e' to physical sector 0 (LBA: 0) as DATA
+[2025-09-09 21:06:06] INFO: Drive 0: Written 'l' to physical sector 1 (LBA: 0) as DATA
+[2025-09-09 21:06:06] INFO: Drive 1: Written 'l' to physical sector 1 (LBA: 0) as DATA
+[2025-09-09 21:06:07] INFO: Drive 0: Written 'o' to physical sector 2 (LBA: 0) as DATA
+[2025-09-09 21:06:07] INFO: Drive 1: Written ' ' to physical sector 2 (LBA: 0) as DATA
+[2025-09-09 21:06:07] INFO: Drive 0: Written 'W' to physical sector 3 (LBA: 0) as DATA
+[2025-09-09 21:06:07] INFO: Drive 1: Written 'o' to physical sector 3 (LBA: 0) as DATA
+[2025-09-09 21:06:07] INFO: Drive 0: Written 'r' to physical sector 4 (LBA: 0) as DATA
+[2025-09-09 21:06:08] INFO: Drive 1: Written 'l' to physical sector 4 (LBA: 0) as DATA
+[2025-09-09 21:06:08] INFO: Drive 0: Written 'd' to physical sector 5 (LBA: 0) as DATA
+[2025-09-09 21:06:08] INFO: RAID configuration saved to raid_0/raid_config.json
+[2025-09-09 21:06:08] INFO: RAID-0 write operation completed for logical block 0
+[2025-09-09 21:06:33] ERROR: Drive 0: DRIVE FAILURE DETECTED
+[2025-09-09 21:06:33] INFO: RAID configuration saved to raid_0/raid_config.json
+[2025-09-09 21:06:33] ERROR: RAID FAILURE: Not enough drives to maintain data integrity!
+[2025-09-09 21:06:43] INFO: Writing data: 'Hello world' to RAID-0
+[2025-09-09 21:06:43] INFO: Drive 1: Written 'H' to physical sector 5 (LBA: 1) as DATA
+[2025-09-09 21:06:43] INFO: Drive 1: Written 'e' to physical sector 6 (LBA: 1) as DATA
+[2025-09-09 21:06:43] INFO: Drive 1: Written 'l' to physical sector 7 (LBA: 1) as DATA
+[2025-09-09 21:06:43] INFO: Drive 1: Written 'l' to physical sector 8 (LBA: 1) as DATA
+[2025-09-09 21:06:44] INFO: Drive 1: Written 'o' to physical sector 9 (LBA: 1) as DATA
+[2025-09-09 21:06:44] INFO: Drive 1: Written ' ' to physical sector 10 (LBA: 1) as DATA
+[2025-09-09 21:06:44] INFO: Drive 1: Written 'w' to physical sector 11 (LBA: 1) as DATA
+[2025-09-09 21:06:44] INFO: Drive 1: Written 'o' to physical sector 12 (LBA: 1) as DATA
+[2025-09-09 21:06:45] INFO: Drive 1: Written 'r' to physical sector 13 (LBA: 1) as DATA
+[2025-09-09 21:06:45] INFO: Drive 1: Written 'l' to physical sector 14 (LBA: 1) as DATA
+[2025-09-09 21:06:45] INFO: Drive 1: Written 'd' to physical sector 15 (LBA: 1) as DATA
+[2025-09-09 21:06:45] INFO: RAID configuration saved to raid_0/raid_config.json
+[2025-09-09 21:06:45] INFO: RAID-0 write operation completed for logical block 1
+[2025-09-09 21:17:20] INFO: RAID Teaching Tool shutting down
+[2025-09-09 21:17:23] INFO: RAID Teaching Tool started
+[2025-09-09 21:17:35] INFO: Initializing RAID-10 (Mirrored Stripes) structure (clear_existing=True)
+[2025-09-09 21:17:35] INFO: RAID configuration saved to raid_10/raid_config.json
+[2025-09-09 21:17:35] INFO: Added drive 0 to RAID-10
+[2025-09-09 21:17:35] INFO: RAID configuration saved to raid_10/raid_config.json
+[2025-09-09 21:17:35] INFO: Added drive 1 to RAID-10
+[2025-09-09 21:17:35] INFO: RAID configuration saved to raid_10/raid_config.json
+[2025-09-09 21:17:35] INFO: Added drive 2 to RAID-10
+[2025-09-09 21:17:35] INFO: RAID configuration saved to raid_10/raid_config.json
+[2025-09-09 21:17:35] INFO: Added drive 3 to RAID-10
+[2025-09-09 21:17:35] INFO: RAID configuration saved to raid_10/raid_config.json
+[2025-09-09 21:17:35] INFO: RAID-10 initialized fresh with 4 drives
+[2025-09-09 21:17:48] INFO: Writing data: 'Hello World' to RAID-10
+[2025-09-09 21:17:48] INFO: Drive 0: Written 'H' to physical sector 0 (LBA: 0) as DATA
+[2025-09-09 21:17:48] INFO: Drive 1: Written 'H' to physical sector 0 (LBA: 0) as DATA
+[2025-09-09 21:17:48] INFO: Drive 2: Written 'e' to physical sector 0 (LBA: 0) as DATA
+[2025-09-09 21:17:48] INFO: Drive 3: Written 'e' to physical sector 0 (LBA: 0) as DATA
+[2025-09-09 21:17:48] INFO: Drive 0: Written 'l' to physical sector 1 (LBA: 0) as DATA
+[2025-09-09 21:17:49] INFO: Drive 1: Written 'l' to physical sector 1 (LBA: 0) as DATA
+[2025-09-09 21:17:49] INFO: Drive 2: Written 'l' to physical sector 1 (LBA: 0) as DATA
+[2025-09-09 21:17:49] INFO: Drive 3: Written 'l' to physical sector 1 (LBA: 0) as DATA
+[2025-09-09 21:17:49] INFO: Drive 0: Written 'o' to physical sector 2 (LBA: 0) as DATA
+[2025-09-09 21:17:49] INFO: Drive 1: Written 'o' to physical sector 2 (LBA: 0) as DATA
+[2025-09-09 21:17:49] INFO: Drive 2: Written ' ' to physical sector 2 (LBA: 0) as DATA
+[2025-09-09 21:17:49] INFO: Drive 3: Written ' ' to physical sector 2 (LBA: 0) as DATA
+[2025-09-09 21:17:49] INFO: Drive 0: Written 'W' to physical sector 3 (LBA: 0) as DATA
+[2025-09-09 21:17:49] INFO: Drive 1: Written 'W' to physical sector 3 (LBA: 0) as DATA
+[2025-09-09 21:17:50] INFO: Drive 2: Written 'o' to physical sector 3 (LBA: 0) as DATA
+[2025-09-09 21:17:50] INFO: Drive 3: Written 'o' to physical sector 3 (LBA: 0) as DATA
+[2025-09-09 21:17:50] INFO: Drive 0: Written 'r' to physical sector 4 (LBA: 0) as DATA
+[2025-09-09 21:17:50] INFO: Drive 1: Written 'r' to physical sector 4 (LBA: 0) as DATA
+[2025-09-09 21:17:50] INFO: Drive 2: Written 'l' to physical sector 4 (LBA: 0) as DATA
+[2025-09-09 21:17:50] INFO: Drive 3: Written 'l' to physical sector 4 (LBA: 0) as DATA
+[2025-09-09 21:17:50] INFO: Drive 0: Written 'd' to physical sector 5 (LBA: 0) as DATA
+[2025-09-09 21:17:50] INFO: Drive 1: Written 'd' to physical sector 5 (LBA: 0) as DATA
+[2025-09-09 21:17:50] INFO: RAID-10: Data 'Hello World' written to mirrored stripes for LBA 0
+[2025-09-09 21:17:50] INFO: RAID configuration saved to raid_10/raid_config.json
+[2025-09-09 21:17:50] INFO: RAID-10 write operation completed for logical block 0
+[2025-09-09 21:18:14] ERROR: Drive 0: DRIVE FAILURE DETECTED
+[2025-09-09 21:18:14] INFO: RAID configuration saved to raid_10/raid_config.json
+[2025-09-09 21:18:14] WARN: RAID-10 operating in degraded mode
+[2025-09-09 21:20:25] ERROR: Drive 2: DRIVE FAILURE DETECTED
+[2025-09-09 21:20:25] INFO: RAID configuration saved to raid_10/raid_config.json
+[2025-09-09 21:20:25] WARN: RAID-10 operating in degraded mode
+[2025-09-09 21:20:54] INFO: RAID configuration saved to raid_10/raid_config.json
+[2025-09-09 21:20:54] INFO: Added drive 4 to RAID-10
+[2025-09-09 21:21:44] WARN: Drive 0 is already inactive/failed.
+[2025-09-09 21:22:03] INFO: Initiating clear of RAID configuration raid_10.
+[2025-09-09 21:22:10] INFO: RAID Teaching Tool shutting down
